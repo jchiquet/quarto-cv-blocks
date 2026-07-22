@@ -23,12 +23,6 @@ jobs:
         with:
           tinytex: true
 
-      - name: Install LaTeX packages
-        run: |
-          tlmgr install \
-            titlesec fancyhdr float eurosym fontawesome url \
-            psnfss biblatex biber
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
