@@ -1,0 +1,68 @@
+---
+format:
+  cv-blocks-pdf: default
+classoption: [10pt, english]
+engine: knitr
+cv-blocks:
+  lang: en
+  long: true
+header-includes:
+  - '\def\nom{Jane Doe}'
+  - '\def\title{Example CV}'
+  - '\addbibresource{data/papers.bib}'
+  - '\addbibresource{data/talks.bib}'
+---
+
+{{< include _body.qmd >}}
+
+## Research Projects
+
+### DISCERN
+
+As part of the DISCERN project, my group develops sparse graphical model estimators for integrating multi-omics data. Given a sample covariance matrix $S$, we estimate a sparse precision matrix $\hat\Theta_\lambda$ by solving
+
+$$
+\hat\Theta_\lambda = \arg\min_{\Theta \succ 0} \; -\log\det\Theta + \mathrm{tr}(S\Theta) + \lambda \|\Theta\|_1 .
+$$
+
+```{r}
+#| echo: false
+#| label: fig-lambda
+#| fig-cap: "Estimation error as a function of the sparsity penalty"
+#| fig-pos: "H"
+#| fig-width: 4.2
+#| fig-height: 2.2
+#| message: false
+suppressPackageStartupMessages(library(ggplot2))
+set.seed(42)
+lambda <- seq(0.05, 0.5, length.out = 6)
+error <- pmax(0.9 * exp(-3 * lambda) + rnorm(6, 0, 0.02), 0.05)
+df <- data.frame(lambda = lambda, error = error)
+
+ggplot(df, aes(x = lambda, y = error)) +
+  geom_line(color = "#345A8A") +
+  geom_point(color = "#CC0000", size = 1.6) +
+  labs(x = expression(lambda), y = "Estimation error") +
+  theme_minimal(base_size = 9)
+```
+
+Increasing the penalty $\lambda$ trades estimation error for a sparser,
+more interpretable graph, see @fig-lambda.
+
+### Another project
+
+{{< lipsum 2 >}}
+
+See @tbl-lambda.
+
+```{r}
+#| echo: false
+#| label: tbl-lambda
+#| tbl-cap: "Estimation error and graph sparsity for a few penalty values"
+df_tbl <- data.frame(
+  Lambda = c(0.05, 0.2, 0.5),
+  Error = c(0.79, 0.42, 0.19),
+  Sparsity = c("12%", "48%", "81%")
+)
+knitr::kable(df_tbl)
+```

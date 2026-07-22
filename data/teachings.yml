@@ -1,0 +1,32 @@
+en:
+  intro: "Approximately 2000 hours of teaching. Lecturer at Example University from 2015 to 2024."
+  short_note: "Only the most notable courses are listed here."
+  spacer: medskip
+  entries:
+    - date: "2020--24"
+      title: "Statistics in Action with R"
+      items:
+        - label: "Msc"
+          text: "Probabilistic models, data analysis, R programming"
+  long_entries:
+    - date: "2017"
+      title: "Convex Optimization (\\rm 12h course)"
+      items:
+        - label: "Msc"
+          text: "Gradient methods, Newton method, Proximal methods"
+fr:
+  intro: "Environ 2000 heures d'enseignement. Enseignant à l'université Exemple de 2015 à 2024."
+  short_note: "Seuls les enseignements les plus notables sont listés ici."
+  spacer: medskip
+  entries:
+    - date: "2020--24"
+      title: "Statistique en action avec R"
+      items:
+        - label: "Msc"
+          text: "Modèles probabilistes, analyse de données, programmation R"
+  long_entries:
+    - date: "2017"
+      title: "Optimisation convexe (\\rm 12h cours)"
+      items:
+        - label: "Msc"
+          text: "Méthodes de gradient, méthode de Newton, méthodes proximales"

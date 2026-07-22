@@ -1,0 +1,21 @@
+.quarto/
+*.tex
+*.pdf
+*.html
+*.bcf
+*.bbl
+*.blg
+*.run.xml
+*.log
+
+/.quarto/
+**/*.quarto_ipynb
+
+# knitr/jupyter figure output for the executable code chunks in
+# cv-{en,fr}-long.qmd (Research Project section)
+*_files/
+
+# CI staging dir for the gh-pages PDF publish (see .github/workflows/build.yml)
+_site/
+
+snowflake.log

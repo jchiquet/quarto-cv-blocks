@@ -1,0 +1,7 @@
+project:
+  type: default
+  render:
+    - "cv-en-long.qmd"
+    - "cv-en-short.qmd"
+    - "cv-fr-long.qmd"
+    - "cv-fr-short.qmd"

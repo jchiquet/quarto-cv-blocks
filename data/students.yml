@@ -1,0 +1,23 @@
+groups:
+  - heading: {en: "PhD students", fr: "Doctorants"}
+    entries:
+      # Same long/short variant pattern as the DISCERN grant in
+      # grants.yml: identical date/title/co-supervisor row on both sides,
+      # with an extra free-text description item only in the long CV.
+      - long:
+          date: "2021--2024"
+          title: "Jane Roe -- Sparse statistical methods for large-scale multi-omics data"
+          items:
+            - label: {en: "Co-supervisor", fr: "Co-encadrant"}
+              text: "Prof. Example"
+            - label: {en: "Description", fr: "Description"}
+              text: "Developed sparse graphical model estimators for
+                integrating heterogeneous omics data sources, with
+                applications to the DISCERN consortium. Defended in 2024;
+                now a postdoctoral researcher at Example University."
+        short:
+          date: "2021--2024"
+          title: "Jane Roe -- Sparse statistical methods for large-scale multi-omics data"
+          items:
+            - label: {en: "Co-supervisor", fr: "Co-encadrant"}
+              text: "Prof. Example"

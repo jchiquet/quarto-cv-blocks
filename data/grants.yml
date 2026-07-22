@@ -1,0 +1,58 @@
+groups:
+  - heading: null
+    entries: []
+  - heading: {en: "On going Projects", fr: "Projets en cours"}
+    entries:
+      # A long/short entry variant (Pattern D) whose two sides differ only
+      # by one extra item -- here a free-text description paragraph shown
+      # only in the long CV. `item.text` wraps like any paragraph, since
+      # it's typeset in the \multblock table's p{.8\linewidth} column.
+      - long:
+          date: "2023--2027"
+          title: "DISCERN -- Discovering the causes of a poorly understood cancer"
+          items:
+            - label: {en: "Partners", fr: "Partenaires"}
+              text: "20 partners"
+            - label: {en: "Support", fr: "Financement"}
+              text: "Horizon Europe"
+            - label: {en: "Description", fr: "Description"}
+              text: "A five-year consortium project combining statistical
+                genomics, imaging, and epidemiological cohort data to
+                identify early biomarkers of a poorly understood cancer
+                subtype. My group leads the statistical modelling work
+                package, developing sparse graphical models for
+                multi-omics integration across the twenty partner sites."
+        short:
+          date: "2023--2027"
+          title: "DISCERN -- Discovering the causes of a poorly understood cancer"
+          items:
+            - label: {en: "Partners", fr: "Partenaires"}
+              text: "20 partners"
+            - label: {en: "Support", fr: "Financement"}
+              text: "Horizon Europe"
+  - heading:
+      en: {long: "Past", short: "Past (selection)"}
+      fr: {long: "Passés", short: "Passés (sélection)"}
+    entries:
+      - date: "2019--2023"
+        title: "EcoNet -- Advanced statistical modelling of ecological networks"
+        items:
+          - label: {en: "Support", fr: "Financement"}
+            text: "French National Research Agency (ANR)"
+      - date: "2017--2019"
+        title: "SEARS -- Sampling strategies and network analysis"
+        items:
+          - label: {en: "Leader", fr: "Coordinateur"}
+            text: "Mathieu Thomas"
+        long_only: true
+  - heading: {en: "Other grants", fr: "Autres financements"}
+    long_only: true
+    short_fallback:
+      en: "5 other past grants (selection omitted)."
+      fr: "5 autres financements passés (sélection omise)."
+    entries:
+      - date: "2010--2012"
+        title: "Older grant, listed only in the long version"
+        items:
+          - label: {en: "Support", fr: "Financement"}
+            text: "French National Research Agency (ANR)"

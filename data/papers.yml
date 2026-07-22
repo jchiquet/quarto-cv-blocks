@@ -1,0 +1,9 @@
+groups:
+  - heading: "Selected Publications"
+    prefix: JP
+    bib: data/papers
+    long_only: true
+  - heading: "Selected Talks"
+    prefix: CT
+    bib: data/talks
+    long_only: true

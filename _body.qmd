@@ -1,0 +1,37 @@
+::: {.cv-personalinfo file="data/personal.yml"}
+:::
+
+## Experience
+
+::: {.cv-block file="data/experience.yml"}
+:::
+
+## Education
+
+::: {.cv-block file="data/education.yml"}
+:::
+
+## Grants
+
+::: {.cv-block file="data/grants.yml"}
+:::
+
+## Activities
+
+::: {.cv-block file="data/activities.yml"}
+:::
+
+## Students
+
+::: {.cv-block file="data/students.yml"}
+:::
+
+## Teaching
+
+::: {.cv-block file="data/teachings.yml"}
+:::
+
+## Publications
+
+::: {.cv-bibliography file="data/papers.yml"}
+:::

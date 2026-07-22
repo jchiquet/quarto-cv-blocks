@@ -1,0 +1,49 @@
+title: CV Blocks
+author: Julien Chiquet
+version: 1.0.0
+quarto-required: ">=1.4.0"
+contributes:
+  filters:
+    - cv-blocks.lua
+  formats:
+    pdf:
+      filters:
+        - cv-blocks.lua
+      documentclass: article
+      classoption: [twoside]
+      papersize: a4
+      geometry:
+        - textheight=135ex
+        - textwidth=46em
+        - top=40pt
+        - bottom=60pt
+        - inner=70pt
+      colorlinks: true
+      linkcolor: mred
+      urlcolor: mblue
+      citecolor: mblue
+      pdf-engine: lualatex
+      number-sections: true
+      toc: false
+      fig-cap-location: bottom
+      tbl-cap-location: bottom
+      include-in-header:
+        - partials/pdf/include-in-header.tex
+      template-partials:
+        - partials/pdf/before-body.tex
+        - partials/pdf/fonts.latex
+        # Quarto's default biblio.tex unconditionally appends a final
+        # \printbibliography. `.cv-bibliography` already emits its own
+        # inline wherever it appears in the body -- no-op override.
+        - partials/pdf/biblio.tex
+      cite-method: biblatex
+      biblatexoptions:
+        - style=numeric
+        - sorting=ydnt
+        - giveninits=true
+        - maxbibnames=999
+        - date=year
+        - doi=true
+        - url=true
+        - isbn=false
+        - eprint=false

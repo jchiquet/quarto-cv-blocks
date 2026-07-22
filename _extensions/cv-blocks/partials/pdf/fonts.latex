@@ -1,0 +1,8 @@
+$-- This extension loads its own inputenc/fontenc/fonts (see
+$-- partials/pdf/include-in-header.tex -- classic Type 1 fonts, no
+$-- fontspec needed). Quarto's own default fonts.latex unconditionally
+$-- loads `unicode-math` under LuaLaTeX/XeLaTeX, which silently breaks any
+$-- macro sharing a name with a math operator (e.g. \mp, the
+$-- minus-or-plus symbol) and breaks \euro (eurosym) immediately after
+$-- math mode. Overriding this partial as a no-op avoids both instead of
+$-- chasing every symbol unicode-math happens to also define.

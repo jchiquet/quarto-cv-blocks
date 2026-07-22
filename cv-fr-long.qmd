@@ -1,0 +1,72 @@
+---
+format:
+  cv-blocks-pdf: default
+classoption: [10pt]
+engine: knitr
+cv-blocks:
+  lang: fr
+  long: true
+header-includes:
+  - '\def\nom{Jane Doe}'
+  - '\def\title{Example CV}'
+  - '\addbibresource{data/papers.bib}'
+  - '\addbibresource{data/talks.bib}'
+---
+
+{{< include _body.qmd >}}
+
+## Projets de recherche
+
+### DISCERN
+
+Dans le cadre du projet DISCERN, mon équipe développe des estimateurs de
+modèles graphiques parcimonieux pour l'intégration de données multi-omiques.
+À partir d'une matrice de covariance empirique $S$, on estime une matrice
+de précision parcimonieuse $\hat\Theta_\lambda$ en résolvant
+
+$$
+\hat\Theta_\lambda = \arg\min_{\Theta \succ 0} \; -\log\det\Theta + \mathrm{tr}(S\Theta) + \lambda \|\Theta\|_1 .
+$$
+
+```{r}
+#| echo: false
+#| label: fig-lambda
+#| fig-cap: "Erreur d'estimation en fonction de la pénalité de parcimonie"
+#| fig-pos: "H"
+#| fig-width: 4.2
+#| fig-height: 2.2
+#| message: false
+suppressPackageStartupMessages(library(ggplot2))
+set.seed(42)
+lambda <- seq(0.05, 0.5, length.out = 6)
+erreur <- pmax(0.9 * exp(-3 * lambda) + rnorm(6, 0, 0.02), 0.05)
+df <- data.frame(lambda = lambda, erreur = erreur)
+
+ggplot(df, aes(x = lambda, y = erreur)) +
+  geom_line(color = "#345A8A") +
+  geom_point(color = "#CC0000", size = 1.6) +
+  labs(x = expression(lambda), y = "Erreur d'estimation") +
+  theme_minimal(base_size = 9)
+```
+
+Augmenter la pénalité $\lambda$ échange une erreur d'estimation plus
+faible contre un graphe plus parcimonieux et plus interprétable, voir
+@fig-lambda.
+
+### Autre projet
+
+{{< lipsum 2 >}}
+
+Voir @tbl-lambda.
+
+```{r}
+#| echo: false
+#| label: tbl-lambda
+#| tbl-cap: "Erreur d'estimation et parcimonie du graphe pour quelques valeurs de la pénalité"
+df_tbl <- data.frame(
+  Lambda = c(0.05, 0.2, 0.5),
+  Erreur = c(0.79, 0.42, 0.19),
+  Parcimonie = c("12%", "48%", "81%")
+)
+knitr::kable(df_tbl)
+```

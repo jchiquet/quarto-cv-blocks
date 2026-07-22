@@ -1,0 +1,19 @@
+groups:
+  - heading: null
+    entries:
+      - en:
+          - date: "2015"
+            title: "Habilitation in Mathematics"
+            items:
+              - label: "Title"
+                text: "\\em Sparse methods for complex data"
+          - date: "2003"
+            title: "PhD in Applied Mathematics"
+        fr:
+          - date: "2015"
+            title: "Habilitation à diriger des recherches"
+            items:
+              - label: "Intitulé"
+                text: "\\em Méthodes parcimonieuses pour données complexes"
+          - date: "2003"
+            title: "Doctorat en mathématiques appliquées"

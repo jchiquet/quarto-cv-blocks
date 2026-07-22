@@ -1,0 +1,10 @@
+groups:
+  - heading: null
+    entries:
+      - date: "2011--"
+        title: "Researcher, Example Institute"
+      - date: "2008--2011"
+        title: "Postdoc, Example University"
+        items:
+          - label: "supervisor"
+            text: "Dr. Example"

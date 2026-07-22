@@ -1,0 +1,67 @@
+on:
+  push:
+    branches: main
+  pull_request:
+    branches: main
+  workflow_dispatch:
+
+name: Build and publish examples
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          tinytex: true
+
+     - name: Install LaTeX packages
+        run: |
+          tlmgr install \
+            titlesec fancyhdr float eurosym fontawesome url \
+            psnfss biblatex biber
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      # cv-yaml.lua shells out to Python + PyYAML to parse data/*.yml
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: System dependencies for R packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libcurl4-openssl-dev libfontconfig1-dev
+          sudo apt-get install -y --no-install-recommends libharfbuzz-dev
+          sudo apt-get install -y --no-install-recommends libfribidi-dev
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Install R packages
+        run: Rscript -e "install.packages(c('knitr', 'ggplot2'))"
+
+      - name: Render examples
+        run: quarto render
+
+      - name: Stage PDFs
+        run: |
+          mkdir -p _site
+          cp cv-en-long.pdf cv-en-short.pdf cv-fr-long.pdf cv-fr-short.pdf _site/
+
+      - name: Publish to gh-pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _site

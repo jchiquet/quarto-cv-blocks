@@ -1,0 +1,21 @@
+email: jane.doe@example.org
+web: https://example.org
+github: https://github.com/example
+en:
+  bio:
+    - "Born January 1, 1990"
+    - "Example citizen"
+  position: "{\\sc Researcher} in Statistics"
+  address:
+    - "Example Institute"
+    - "1 Example Street"
+    - "00000 Example City"
+fr:
+  bio:
+    - "Née le 1 janvier 1990"
+    - "Citoyenne d'exemple"
+  position: "{\\sc Chercheuse}"
+  address:
+    - "Institut Exemple"
+    - "1 rue de l'exemple"
+    - "00000 Ville Exemple"

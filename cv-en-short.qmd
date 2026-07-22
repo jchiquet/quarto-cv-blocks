@@ -1,0 +1,15 @@
+---
+format:
+  cv-blocks-pdf: default
+classoption: [10pt, english]
+cv-blocks:
+  lang: en
+  long: false
+header-includes:
+  - '\def\nom{Jane Doe}'
+  - '\def\title{Example CV}'
+  - '\addbibresource{data/papers.bib}'
+  - '\addbibresource{data/talks.bib}'
+---
+
+{{< include _body.qmd >}}

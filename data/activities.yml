@@ -1,0 +1,27 @@
+groups:
+  - heading: {en: "Scientific committees", fr: "Comités scientifiques"}
+    entries:
+      - en:
+          date: ""
+          title: "Councils"
+          items:
+            - label: "since 2022"
+              text: "Member of the \\href{https://example.org}{Foundation} Council"
+        fr:
+          date: ""
+          title: "Bureau"
+          items:
+            - label: "depuis 2022"
+              text: "Membre du conseil de la \\href{https://example.org}{Fondation}"
+      - long:
+          date: "2020--2024"
+          title: "PhD Committee (\\rm full list)"
+          items:
+            - label: "role"
+              text: "Reviewer for 12 PhD theses"
+        short:
+          date: "2020--2024"
+          title: "PhD Committee"
+          items:
+            - label: "role"
+              text: "Reviewer for several PhD theses"
