@@ -30,7 +30,29 @@ local cv_patterns = require("cv-patterns")
 
 local opts = { lang = "en", long = true }
 
+-- Quarto normalizes the document's `author:` metadata into `authors`
+-- (a list of structured records with `name`/`email`/`url`/... fields,
+-- the same one its own PDF template uses for `\author{...}`) before our
+-- filter runs. `.cv-personalinfo` uses the first author's email/url
+-- instead of requiring them again in the data file -- see the README,
+-- "Personal info".
+local function read_author(meta)
+  local authors = meta.authors
+  if not authors or not authors[1] then
+    return
+  end
+  local author = authors[1]
+  if author.email then
+    opts.email = pandoc.utils.stringify(author.email)
+  end
+  if author.url then
+    opts.web = pandoc.utils.stringify(author.url)
+  end
+end
+
 local function read_opts(meta)
+  read_author(meta)
+
   local m = meta["cv-blocks"]
   if not m then
     return

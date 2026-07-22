@@ -215,9 +215,11 @@ local PERSONAL_INFO_WIDTH = {
 }
 
 --- Renders the personal-info block (name/contact block under the CV
--- header) from data/personal.yml content.
--- @param data table { email, web, github, en = {bio, position, address}, fr = {...} }
--- @param opts table { lang = "en"|"fr" }
+-- header) from data/personal.yml content. `email`/`web` come from the
+-- document's own `author:` metadata (see cv-blocks.lua's read_author),
+-- not from this file, to avoid a second place to keep them in sync.
+-- @param data table { github, en = {bio, position, address}, fr = {...} }
+-- @param opts table { lang = "en"|"fr", email, web }
 -- @return pandoc.List of pandoc Block elements
 function M.render_personal_info(data, opts)
   local side = opts.lang == "fr" and data.fr or data.en
@@ -241,7 +243,7 @@ function M.render_personal_info(data, opts)
     %s
   \end{minipage}
 \end{tabular}]],
-    width.left, bio, data.email, data.email, data.web, data.web, data.github, data.github,
+    width.left, bio, opts.email, opts.email, opts.web, opts.web, data.github, data.github,
     width.right, side.position, address
   )
 

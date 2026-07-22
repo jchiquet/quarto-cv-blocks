@@ -1,5 +1,5 @@
-email: jane.doe@example.org
-web: https://example.org
+# email/web come from the `author` metadata in _quarto.yml instead --
+# see the extension README, "Personal info".
 github: https://github.com/example
 en:
   bio:
