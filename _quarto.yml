@@ -5,3 +5,6 @@ project:
     - "cv-en-short.qmd"
     - "cv-fr-long.qmd"
     - "cv-fr-short.qmd"
+
+author: Jane Doe
+title: Example CV

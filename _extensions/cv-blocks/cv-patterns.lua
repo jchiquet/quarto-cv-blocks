@@ -266,9 +266,9 @@ end
 -- silently ignored). `refsection` isn't just for filtering: it's what
 -- makes each section's `[JP1]`, `[JP2]`, ... numbering restart cleanly.
 --
--- Consuming documents must `\addbibresource{<path to <bib>.bib>}` for
--- every `.bib` referenced, in header-includes (preamble-only command,
--- can't be emitted from here) -- see the README ("Bibliography").
+-- Consuming documents must list every `.bib` referenced under Quarto's
+-- native `bibliography:` metadata key (can't be emitted from here, since
+-- it has to land in the preamble) -- see the README ("Bibliography").
 -- ---------------------------------------------------------------------
 
 --- Renders a data/<section>.yml file with a top-level `groups: [...]`

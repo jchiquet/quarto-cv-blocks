@@ -1,0 +1,65 @@
+% What's expressible as native Quarto/pandoc PDF metadata lives in
+% _extension.yml instead (documentclass, classoption, geometry,
+% colorlinks/linkcolor/urlcolor/citecolor). Only what has no YAML
+% equivalent stays as raw LaTeX here.
+
+% fonts.latex is overridden as a no-op (see partials/pdf/fonts.latex), so
+% fontenc/inputenc need loading explicitly -- \fontencoding{T1} (small-caps
+% fix below) needs a T1 encoding to select.
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% Language: \ifenglish drives babel and is available to consuming
+% documents for their own EN/FR content. `include-in-header` files are
+% spliced in as raw text, not run through pandoc's template engine, so
+% $if(...)$ metadata conditionals don't work here. `english` is passed as
+% a classoption instead and read back via the LaTeX kernel's
+% \@ifclasswith (reports any option passed to \documentclass, whether or
+% not the class itself declares it).
+\makeatletter
+\newif\ifenglish
+\@ifclasswith{article}{english}{\englishtrue}{\englishfalse}
+\makeatother
+\usepackage[english,french]{babel}
+\ifenglish
+\selectlanguage{english}
+\addto\captionsfrench{% Replace "english" with the language you use
+  \renewcommand{\contentsname}%
+    {Table of contents}%
+}
+\else
+\selectlanguage{french}
+\fi
+
+% Header/footer: no native Quarto equivalent.
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{}
+\fancyfoot[RO,LE]{\thepage}
+\fancyfoot[LO,RE]{\footnotesize\sc\footer}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Section titles: package load only -- \titleformat calls are in
+% before-body.tex, alongside the colors they use.
+\usepackage[explicit]{titlesec}
+
+% array: needed for the custom R{<width>} column type \multblock relies
+% on. Also loaded by Quarto's own tables.tex, but load it explicitly so
+% \multblock keeps working if a document ever disables that (`tables: false`).
+\usepackage{array}
+
+\usepackage{url}
+\usepackage{eurosym}
+\usepackage{fontawesome}
+
+% float: needed for the [H] placement specifier, so a captioned figure
+% (e.g. in a "Research Project" section from executable code) stays
+% exactly where it's placed instead of drifting as a normal LaTeX float
+% -- see the extension README, "Executable code". Not needed for tables:
+% pandoc emits captioned tables as `longtable`, which isn't a float.
+\usepackage{float}
+
+% This document's own personal macros (\nom, \title, ...) and any EN/FR
+% vocabulary it needs -- see the extension README, "Usage".

@@ -1,0 +1,66 @@
+% Overrides Quarto's own before-body.tex (just a conditional \maketitle --
+% unused, since documents here build their own title page by hand).
+
+% \nom/\title (used in the fancyhdr footer below, and freely in a
+% document's own raw LaTeX, e.g. a hand-built title page) come from
+% Quarto's native author/title metadata -- see the extension README,
+% "Usage". Every consuming document is expected to set both. `\title` is
+% already a real article.cls command (its argument sets \@title, used by
+% \maketitle, which this extension never calls) -- \renewcommand
+% repurposes it as a plain text-holding macro instead.
+\renewcommand{\title}{$title$}
+\def\nom{$for(authors)$$it.name.literal$$sep$ \and $endfor$}
+
+% Used by the fancyhdr footer in include-in-header.tex.
+\newcommand{\footer}{\nom\ -- \title}
+
+% Colors. Referenced by `linkcolor`/`urlcolor`/`citecolor` (native
+% metadata, resolved into \hypersetup{...} in the preamble) and by
+% \titleformat below -- works even though this runs after \begin{document}
+% since hyperref/xcolor resolve color names lazily, only when typeset.
+\definecolor{mblue}{rgb}{.204,.353,.541}
+\colorlet{mred}{red!80!black}
+
+% Small caps via URW Avant Garde instead of LaTeX's default (faked, from
+% the current font) small caps. \fontencoding{T1} is needed under
+% LuaLaTeX, which defaults to TU encoding and only has T1 shapes for
+% "pag" -- harmless under pdflatex too, since T1 is already the active
+% encoding there (include-in-header.tex loads fontenc[T1] unconditionally).
+\renewcommand{\sc}{\fontencoding{T1}\fontfamily{pag}\fontseries{m}\fontshape{sc}\selectfont}
+\renewcommand{\textsc}[1]{{\sc#1}}
+
+\titleformat{\part}{\sc\huge\color{mred}}{}{0pt}{\noindent\hrulefill~#1~\hrulefill}
+\titleformat{\section}{\sc\huge\color{mred}}{}{0pt}{\noindent\hrulefill~#1~\hrulefill}
+\titleformat{\subsection}{\sc\Large\color{mred}}{}{0pt}{\noindent#1~\hrulefill}
+\titleformat{\subsubsection}{\sc\large}{}{0pt}{\noindent#1}
+\titleformat{\paragraph}[runin]{\sc}{}{}{#1}[]
+\titleformat{\subparagraph}[block]{\sc}{}{}{\noindent#1}[]
+\titlespacing{\subparagraph}{0pt}{0pt}{0pt}
+
+% \multblock/\block: the two primitives cv-patterns.lua's raw LaTeX
+% output is built from -- see the extension README ("How it works").
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\newcommand*{\multblock}[3]{%
+  \par\noindent\begin{tabular}[t]{@{}R{.15\linewidth}|p{.8\linewidth}}
+    \hfill{\sf#1} & {\sc#2} \\\relax
+    \readBlock#3\relax\relax
+  \end{tabular}\medskip
+}
+
+\newcommand*{\block}[2]{%
+  \par\noindent\begin{tabular}{@{}p{.15\linewidth}|p{.8\linewidth}}
+    {\hfill\sf#1} & {\sc#2} \\
+  \end{tabular}\medskip
+}
+
+\newcommand{\readBlock}[2]{%
+  \ifx\relax#1\empty
+  \else
+  \hfill{\em#1} & #2\\
+  \expandafter\readBlock
+  \fi
+}
+
+% Profondeur 1 de la table des matières
+\setcounter{tocdepth}{3}

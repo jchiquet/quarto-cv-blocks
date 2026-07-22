@@ -1,0 +1,6 @@
+$-- Quarto's default biblio.tex unconditionally emits a final
+$-- \printbibliography when cite-method: biblatex is set. `.cv-bibliography`
+$-- Divs already emit their own \nocite + \newrefcontext + \printbibliography
+$-- calls inline, wherever they appear in the document body (interspersed
+$-- with subsections, unlike a single trailing bibliography) -- so this
+$-- override is a no-op, same spirit as partials/pdf/fonts.latex.

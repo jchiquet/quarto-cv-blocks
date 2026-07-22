@@ -1,5 +1,8 @@
 .quarto/
-*.tex
+# Anchored to the root: quarto render's generated .tex files (cv-*.tex)
+# live here, but hand-authored extension sources under
+# _extensions/cv-blocks/partials/pdf/*.tex must NOT be ignored.
+/*.tex
 *.pdf
 *.html
 *.bcf

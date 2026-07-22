@@ -50,14 +50,21 @@ Set the format and a few metadata keys in a document's YAML header:
 format:
   cv-blocks-pdf: default
 classoption: [10pt, english]   # omit "english" for French
+author: Jane Doe
+title: My CV
 cv-blocks:
   lang: en      # or fr — selects the language-specific parts of the data
   long: true    # or false — selects the long/short variant of the data
-header-includes:
-  - '\def\nom{Jane Doe}'
-  - '\def\title{My CV}'
 ---
 ```
+
+`author`/`title` are Quarto's own native metadata keys, not specific to
+this extension — set once per document, or project-wide in `_quarto.yml`
+if every document shares the same author (as the four example CVs at the
+root of this repo do — see there). The extension uses them to define
+`\nom`/`\title`, the two macros the fancyhdr footer relies on, and that a
+document can freely reuse in its own raw LaTeX (e.g. a hand-built title
+page). No `header-includes` needed just for that.
 
 Then use the content blocks in the document body.
 
@@ -174,15 +181,16 @@ groups:
 renders as two separately-numbered lists, `[JP1]`, `[JP2]`, ... and
 `[CT1]`, `[CT2]`, ..., each restarting from 1.
 
-Add a matching `\addbibresource{...}` per `.bib` file to
-`header-includes` (biblatex needs it in the preamble) and Quarto will run
-biber automatically — no external compile script needed, even for a
-document with a bibliography:
+List every `.bib` file under Quarto's native `bibliography:` key (no
+`\addbibresource`/`header-includes` needed — Quarto's own PDF template
+emits one per entry when `cite-method: biblatex` is active, which this
+extension always sets) and it will run biber automatically — no external
+compile script needed, even for a document with a bibliography:
 
 ```yaml
-header-includes:
-  - '\addbibresource{papers.bib}'
-  - '\addbibresource{talks.bib}'
+bibliography:
+  - papers.bib
+  - talks.bib
 ```
 
 Bibliography groups can also be tagged `long_only`/`short_only`, same as
