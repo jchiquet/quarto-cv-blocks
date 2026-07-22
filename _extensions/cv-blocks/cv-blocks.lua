@@ -48,6 +48,12 @@ local function read_author(meta)
   if author.url then
     opts.web = pandoc.utils.stringify(author.url)
   end
+  -- `github` isn't part of Quarto's author schema -- a top-level
+  -- `github:` metadata key instead (plain custom field, not a normalized
+  -- author sub-field).
+  if meta.github then
+    opts.github = pandoc.utils.stringify(meta.github)
+  end
 end
 
 local function read_opts(meta)

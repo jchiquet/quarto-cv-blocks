@@ -1,6 +1,5 @@
-# email/web come from the `author` metadata in _quarto.yml instead --
-# see the extension README, "Personal info".
-github: https://github.com/example
+# email/web/github come from the `author`/`github` metadata in
+# _quarto.yml instead -- see the extension README, "Personal info".
 en:
   bio:
     - "Born January 1, 1990"

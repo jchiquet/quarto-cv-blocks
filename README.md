@@ -134,13 +134,11 @@ worked examples.
 ### Personal info
 
 A `.cv-personalinfo` Div's `file` attribute points at a YAML file with
-contact info and a short bio:
+just a short bio (email/web/github come from document metadata instead,
+see below):
 
 ```yaml
 # personal.yml
-email: jane.doe@example.org
-web: https://example.org
-github: https://github.com/example
 en:
   bio: ["Born January 1, 1990"]
   position: "Researcher"
@@ -154,6 +152,18 @@ fr:
 ```markdown
 ::: {.cv-personalinfo file="personal.yml"}
 :::
+```
+
+The email/web/github contact line comes from document metadata instead
+of `personal.yml` — `email`/`url` from Quarto's native `author:` schema,
+`github` from a plain top-level key (not part of that schema):
+
+```yaml
+author:
+  name: Jane Doe
+  email: jane.doe@example.org
+  url: https://example.org
+github: https://github.com/example
 ```
 
 ### Bibliography
