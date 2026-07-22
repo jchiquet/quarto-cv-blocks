@@ -23,7 +23,7 @@ jobs:
         with:
           tinytex: true
 
-     - name: Install LaTeX packages
+      - name: Install LaTeX packages
         run: |
           tlmgr install \
             titlesec fancyhdr float eurosym fontawesome url \
