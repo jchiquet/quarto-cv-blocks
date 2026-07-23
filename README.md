@@ -47,19 +47,40 @@ Set the format and a few metadata keys in a document's YAML header:
 
 ```yaml
 ---
+lang: en          # or fr -- this extension only supports these two
+fontsize: 10pt
 format:
-  cv-blocks-pdf: default
-classoption: [10pt, english]   # omit "english" for French
+  cv-blocks-pdf:
+    details: true   # or false — selects the long/short variant of the data
+    compact: true   # optional — one-page document, no running header/footer
 author: Jane Doe
 title: My CV
-cv-blocks:
-  lang: en      # or fr — selects the language-specific parts of the data
-  long: true    # or false — selects the long/short variant of the data
-  compact: true # optional — one-page document, no running header/footer
 ---
 ```
 
-`long` and `compact` are independent: `long` only controls which
+`lang`/`fontsize` are Quarto's own native, top-level keys — not specific
+to this extension — and drive both the extension's own EN/FR content
+selection *and* Quarto's usual LaTeX machinery (babel, hyphenation, the
+document class's font-size option) from that single setting, so there's
+no separate `classoption: [10pt, english]` to keep in sync by hand. Only
+`en`/`fr` are supported; anything else falls back to English content
+(same as leaving `lang` unset). Both languages' babel shorthands stay
+available regardless of which is `lang:` (`_extension.yml` sets
+`variables: {babel-otherlangs: [french, english]}`), so raw LaTeX content
+can freely use e.g. French's `\ieme`/`\iere` ordinal-suffix macros even
+in an English document without an "Undefined control sequence" error.
+
+`details`/`compact` (and `cv-data-dir`/`bib-dir`, see "Content blocks" and
+"Bibliography" below) live under `format.cv-blocks-pdf` — Quarto merges
+format-scoped metadata into the same top-level table the extension reads,
+same mechanism as any other pandoc PDF option (`classoption`, `geometry`,
+...), so this isn't a special case. `cv-data-dir` is deliberately not
+`data-dir`, dodging a confirmed Quarto reserved-key collision:
+`data-dir` is silently swallowed before it even reaches a filter's
+metadata table (confirmed empirically; `bib-dir` has no such problem and
+keeps its plain name).
+
+`details` and `compact` are independent: `details` only controls which
 `long_only`/`short_only` content shows, not page count — a document can
 show the short content set and still span several pages (e.g. a detailed
 "dossier scientifique" that happens to omit the long-only entries). Set
@@ -80,8 +101,10 @@ Then use the content blocks in the document body.
 ### Content blocks
 
 A `.cv-block` Div's `file` attribute points at a YAML file with a
-top-level `groups:` list. Each group has an optional `heading` and a list
-of `entries`, each with a `date`, a `title`, and optional `items`:
+top-level `groups:` list, resolved relative to the input document by
+default, or to `cv-data-dir` if set (see "Usage" above). Each group has an
+optional `heading` and a list of `entries`, each with a `date`, a `title`,
+and optional `items`:
 
 ```yaml
 # experience.yml
@@ -101,7 +124,7 @@ groups:
 ```
 
 `heading` and `label` are short vocabulary words, resolved against the
-document's `cv-blocks.lang`/`cv-blocks.long` metadata — each can be a
+document's `lang`/`details` metadata — each can be a
 plain string, an `{en:, fr:}` pair, a `{long:, short:}` pair, or both
 nested (`{en: {long:, short:}, fr: {long:, short:}}`) when a heading
 needs to vary along both axes. `date`/`title`/`item.text` are opaque raw
@@ -177,9 +200,11 @@ github: https://github.com/example
 
 ### Bibliography
 
-A `.cv-bibliography` Div's `file` attribute points at a YAML file listing
-one or more bibliography **sections**, each with its own `.bib` file,
-citation-key prefix, and independent numbering:
+A `.cv-bibliography` Div's `file` attribute points at a YAML file (resolved
+against `cv-data-dir`, same as `.cv-block`) listing one or more
+bibliography **sections**, each with its own `.bib` file (resolved
+against `bib-dir` if set), citation-key prefix, and independent
+numbering:
 
 ```yaml
 # publications.yml
@@ -228,12 +253,12 @@ that stays in sync with the data instead of a number updated by hand:
 ```
 
 `file` resolves the same way as a Div's `file` attribute (against
-`cv-blocks.data-dir`); `group` restricts the count to one 1-based group
-index, e.g. to separate current students from alumni, or PhD students
-from Master's students, when both live in the same file as separate
-groups. The count always includes `long_only` content — a total like "47
-journal papers" belongs in a short CV's summary too — so it isn't
-affected by the document's own `cv-blocks.long` setting.
+`cv-data-dir`); `group` restricts the count to one 1-based group index, e.g.
+to separate current students from alumni, or PhD students from Master's
+students, when both live in the same file as separate groups. The count
+always includes `long_only` content — a total like "47 journal papers"
+belongs in a short CV's summary too — so it isn't affected by the
+document's own `details` setting.
 
 Quote `file`/`group` values normally; inside a raw LaTeX
 (`` ```{=latex} ``) block specifically, put a space between a `{...}`

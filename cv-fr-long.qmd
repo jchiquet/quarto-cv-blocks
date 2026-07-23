@@ -1,16 +1,15 @@
 ---
+lang: fr
+fontsize: 10pt
 format:
-  cv-blocks-pdf: default
-classoption: [10pt]
+  cv-blocks-pdf:
+    details: true
 keywords: [Modèles parcimonieux, Intégration multi-omique, Recherche reproductible]
 categories: [Méthodes statistiques, Apprentissage automatique]
 engine: knitr
 bibliography:
   - data/papers.bib
   - data/talks.bib
-cv-blocks:
-  lang: fr
-  long: true
 ---
 
 ## Curriculum Vitæ

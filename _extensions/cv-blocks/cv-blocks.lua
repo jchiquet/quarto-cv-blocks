@@ -14,21 +14,37 @@
 --   :::
 --
 -- `file` is resolved relative to the input document by default, or to
--- `cv-blocks.data-dir` if set in document/project metadata. Bibliography
--- `.bib` file paths (referenced by name inside the YAML, not `file`) are
--- resolved the same way against `cv-blocks.bib-dir`.
+-- `cv-data-dir` if set under `format.cv-blocks-pdf` in document/project
+-- metadata. Bibliography `.bib` file paths (referenced by name inside the
+-- YAML, not `file`) are resolved the same way against `bib-dir`.
 --
--- Language (en/fr) and length (long/short) are driven by document
--- metadata:
+-- Language is Quarto's own native, top-level `lang:` key -- this
+-- extension only supports "en"/"fr" (any other value falls back to
+-- English content, same as unset). Reusing it (instead of a separate
+-- `cv-lang`) means a document's language is set once and drives both
+-- this extension's EN/FR content selection *and* Quarto's own babel
+-- setup, document class option, hyphenation, etc. -- no manual
+-- `classoption: [english]` needed, and no risk of the two disagreeing.
 --
---   cv-blocks:
---     lang: en      # or fr; default "en"
---     long: true    # or false; default true
+-- Length (long/short) and everything else extension-specific is
+-- format-scoped document metadata (Quarto flattens `format.cv-blocks-pdf.*`
+-- into the top-level meta table this filter sees, same as any other
+-- format option):
+--
+--   lang: en                   # or "fr"; default "en" if unset
+--   format:
+--     cv-blocks-pdf:
+--       details: true          # or false; default true
+--
+-- `cv-data-dir` (not `data-dir`) specifically dodges a confirmed Quarto
+-- reserved-key collision: `data-dir` is silently swallowed before it
+-- reaches a filter's meta table at all (empirically confirmed -- unlike
+-- `bib-dir`, which is a plain, unclaimed key and flattens through fine).
 
 local cv_yaml = require("cv-yaml")
 local cv_patterns = require("cv-patterns")
 
-local opts = { lang = "en", long = true }
+local opts = { lang = "en", details = true }
 
 -- Quarto normalizes the document's `author:` metadata into `authors`
 -- (a list of structured records with `name`/`email`/`url`/... fields,
@@ -59,26 +75,21 @@ end
 local function read_opts(meta)
   read_author(meta)
 
-  local m = meta["cv-blocks"]
-  if not m then
-    return
+  if meta.lang then
+    opts.lang = pandoc.utils.stringify(meta.lang)
   end
-  if m.lang then
-    opts.lang = pandoc.utils.stringify(m.lang)
-  end
-  if m.long ~= nil then
+  if meta.details ~= nil then
     -- MetaBool values stringify to "true"/"false".
-    opts.long = pandoc.utils.stringify(m.long) == "true"
+    opts.details = pandoc.utils.stringify(meta.details) == "true"
   end
-  if m["bib-dir"] then
-    opts["bib-dir"] = pandoc.utils.stringify(m["bib-dir"])
+  if meta["bib-dir"] then
+    opts["bib-dir"] = pandoc.utils.stringify(meta["bib-dir"])
   end
 end
 
 local function data_dir(meta)
-  local m = meta["cv-blocks"]
-  if m and m["data-dir"] then
-    return pandoc.utils.stringify(m["data-dir"])
+  if meta["cv-data-dir"] then
+    return pandoc.utils.stringify(meta["cv-data-dir"])
   end
   return nil
 end

@@ -29,6 +29,16 @@ contributes:
       toc: false
       fig-cap-location: bottom
       tbl-cap-location: bottom
+      # `lang:` (a document's own, Quarto-native) sets babel's main
+      # language; both are still loaded as available babel languages
+      # regardless, so raw LaTeX content can freely mix EN/FR babel
+      # shorthands (e.g. `\ieme`/`\iere` ordinal suffixes, French-only,
+      # showing up even in an English CV's data) without an "Undefined
+      # control sequence" error. Redundantly listing the main language
+      # again here is harmless (confirmed empirically -- babel doesn't
+      # clash on the duplicate).
+      variables:
+        babel-otherlangs: [french, english]
       include-in-header:
         - partials/pdf/include-in-header.tex
       template-partials:

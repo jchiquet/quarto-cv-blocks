@@ -6,16 +6,17 @@
 --   {{< cv_count file="students.yml" >}}
 --   {{< cv_count file="students.yml" group=1 >}}   -- 1-based group index
 --
--- Resolves `file` against `cv-blocks.data-dir` the same way cv-blocks.lua
--- resolves a Div's `file` attribute, and `bib:` paths against
--- `cv-blocks.bib-dir` the same way `.cv-bibliography` does. Always counts
--- as if `long: true` -- a count is a lifetime total ("47 journal papers"
--- belongs in the short CV's summary too), not display filtering, so a
--- `long_only` group/entry still counts even from a short document. Use
--- `group=` to split a total into its parts (e.g. current vs alumni
--- students, one group each) rather than relying on long/short for that.
--- EN/FR variants still follow the document's own `cv-blocks.lang`, since
--- that's a real translation, not a visibility filter.
+-- Resolves `file` against `cv-data-dir` the same way cv-blocks.lua
+-- resolves a Div's `file` attribute, and `bib:` paths against `bib-dir`
+-- the same way `.cv-bibliography` does (both format.cv-blocks-pdf.*
+-- options).
+-- Always counts as if `details: true` -- a count is a lifetime total ("47
+-- journal papers" belongs in the short CV's summary too), not display
+-- filtering, so a `long_only` group/entry still counts even from a short
+-- document. Use `group=` to split a total into its parts (e.g. current vs
+-- alumni students, one group each) rather than relying on long/short for
+-- that. EN/FR variants still follow the document's own native `lang:`,
+-- since that's a real translation, not a visibility filter.
 
 local cv_yaml = require("cv-yaml")
 local cv_patterns = require("cv-patterns")
@@ -29,22 +30,18 @@ local function unquote(s)
 end
 
 local function count_opts(meta)
-  local opts = { lang = "en", long = true }
-  local m = meta["cv-blocks"]
-  if m then
-    if m.lang then
-      opts.lang = pandoc.utils.stringify(m.lang)
-    end
-    if m["bib-dir"] then
-      opts["bib-dir"] = pandoc.utils.stringify(m["bib-dir"])
-    end
+  local opts = { lang = "en", details = true }
+  if meta.lang then
+    opts.lang = pandoc.utils.stringify(meta.lang)
+  end
+  if meta["bib-dir"] then
+    opts["bib-dir"] = pandoc.utils.stringify(meta["bib-dir"])
   end
   return opts
 end
 
 local function resolve_path(file, meta)
-  local m = meta["cv-blocks"]
-  local dir = m and m["data-dir"] and pandoc.utils.stringify(m["data-dir"])
+  local dir = meta["cv-data-dir"] and pandoc.utils.stringify(meta["cv-data-dir"])
   if dir then
     return dir .. "/" .. file
   end

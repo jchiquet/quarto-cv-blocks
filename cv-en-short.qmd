@@ -1,13 +1,12 @@
 ---
+lang: en
+fontsize: 10pt
 format:
-  cv-blocks-pdf: default
-classoption: [10pt, english]
+  cv-blocks-pdf:
+    details: false
+    compact: true
 keywords: [Sparse models, Multi-omics integration, Reproducible research]
 categories: [Statistical methods, Machine learning]
-cv-blocks:
-  lang: en
-  long: false
-  compact: true
 ---
 
 ## {{< meta author >}} {.unnumbered}

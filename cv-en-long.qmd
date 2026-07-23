@@ -1,16 +1,15 @@
 ---
+lang: en
+fontsize: 10pt
 format:
-  cv-blocks-pdf: default
-classoption: [10pt, english]
+  cv-blocks-pdf:
+    details: true
 engine: knitr
 keywords: [Sparse models, Multi-omics integration, Reproducible research]
 categories: [Statistical methods, Machine learning]
 bibliography:
   - data/papers.bib
   - data/talks.bib
-cv-blocks:
-  lang: en
-  long: true
 ---
 
 ## Curriculum Vitae

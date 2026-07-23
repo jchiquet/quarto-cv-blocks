@@ -5,7 +5,7 @@
 -- formatting, so entry content stays genuinely opaque (raw `\href`, `\em`,
 -- ... pass through untouched).
 --
--- opts passed to every function: { lang = "en"|"fr", long = boolean }
+-- opts passed to every function: { lang = "en"|"fr", details = boolean }
 
 local cv_yaml = require("cv-yaml")
 
@@ -29,7 +29,7 @@ local function resolve_i18n(value, opts)
     return resolve_i18n(opts.lang == "fr" and value.fr or value.en, opts)
   end
   if value.long ~= nil or value.short ~= nil then
-    return resolve_i18n(opts.long and value.long or value.short, opts)
+    return resolve_i18n(opts.details and value.long or value.short, opts)
   end
   return value
 end
@@ -72,7 +72,7 @@ local function select_variant(entry, opts)
   if entry.en ~= nil or entry.fr ~= nil then
     return opts.lang == "fr" and entry.fr or entry.en
   end
-  return opts.long and entry.long or entry.short
+  return opts.details and entry.long or entry.short
 end
 
 -- true when `variant` is a YAML sequence (Pattern E) rather than a single
@@ -88,10 +88,10 @@ end
 -- ---------------------------------------------------------------------
 
 local function entry_visible(entry, opts)
-  if entry.long_only and not opts.long then
+  if entry.long_only and not opts.details then
     return false
   end
-  if entry.short_only and opts.long then
+  if entry.short_only and opts.details then
     return false
   end
   return true
@@ -133,14 +133,14 @@ local function render_group(group, opts, blocks)
     blocks:insert(pandoc.RawBlock("latex", "\\subsubsection{" .. heading .. "}"))
   end
 
-  if group.long_only and not opts.long then
+  if group.long_only and not opts.details then
     if group.short_fallback then
       local text = opts.lang == "fr" and group.short_fallback.fr or group.short_fallback.en
       blocks:insert(pandoc.RawBlock("latex", text or ""))
     end
     return
   end
-  if group.short_only and opts.long then
+  if group.short_only and opts.details then
     return
   end
 
@@ -178,7 +178,7 @@ local function resolve_pattern_f(data, opts)
   if side.intro then
     blocks:insert(pandoc.RawBlock("latex", side.intro))
   end
-  if not opts.long and side.short_note then
+  if not opts.details and side.short_note then
     blocks:insert(pandoc.RawBlock("latex", side.short_note))
   end
   if side.spacer then
@@ -192,7 +192,7 @@ local function resolve_pattern_f(data, opts)
   for _, latex in ipairs(render_entry_list(side.entries, opts)) do
     blocks:insert(pandoc.RawBlock("latex", latex))
   end
-  if opts.long then
+  if opts.details then
     for _, latex in ipairs(render_entry_list(side.long_entries, opts)) do
       blocks:insert(pandoc.RawBlock("latex", latex))
     end
@@ -276,12 +276,12 @@ end
 --- Renders a data/<section>.yml file with a top-level `groups: [...]`
 -- list of bibliography sections into a list of pandoc Blocks.
 -- @param data table { groups: [{ heading?, prefix, bib, long_only? }, ...] }
--- @param opts table { long = boolean, ["bib-dir"] = string }
+-- @param opts table { details = boolean, ["bib-dir"] = string }
 -- @return pandoc.List of pandoc Block elements
 function M.render_bibliography(data, opts)
   local blocks = pandoc.List({})
   for _, group in ipairs(data.groups or {}) do
-    if not (group.long_only and not opts.long) then
+    if not (group.long_only and not opts.details) then
       local heading = resolve_i18n(group.heading, opts)
       if heading then
         blocks:insert(pandoc.RawBlock("latex", "\\subsubsection{" .. heading .. "}"))
@@ -307,7 +307,7 @@ end
 -- ---------------------------------------------------------------------
 -- Counting: how many entries a `.cv-block`/`.cv-bibliography` Div
 -- pointed at this same file/group would actually render, respecting
--- lang/long visibility and pattern D/E variants -- used by the
+-- lang/details visibility and pattern D/E variants -- used by the
 -- `cv_count` shortcode (cv-shortcodes.lua) to keep a hand-written
 -- "N students supervised"-style summary in sync with the data instead
 -- of a number that silently drifts. Mirrors render_entry_list/
@@ -337,7 +337,7 @@ local function count_groups(groups, opts, group_index)
   for i, group in ipairs(groups or {}) do
     if not group_index or i == group_index then
       if group.bib then
-        if not (group.long_only and not opts.long) then
+        if not (group.long_only and not opts.details) then
           local bib_dir = opts["bib-dir"]
           local bib_path = bib_dir and (bib_dir .. "/" .. group.bib .. ".bib") or (group.bib .. ".bib")
           local keys, err = cv_yaml.read_bib_keys(bib_path)
@@ -346,7 +346,7 @@ local function count_groups(groups, opts, group_index)
           end
           n = n + #keys
         end
-      elseif not (group.long_only and not opts.long) and not (group.short_only and opts.long) then
+      elseif not (group.long_only and not opts.details) and not (group.short_only and opts.details) then
         n = n + count_entry_list(group.entries, opts)
       end
     end
@@ -357,7 +357,7 @@ end
 --- Counts the entries a full data/<section>.yml document would render
 -- (see M.render), optionally restricted to a single group.
 -- @param data table plain Lua table decoded from a data/<section>.yml file
--- @param opts table { lang = "en"|"fr", long = boolean, ["bib-dir"] = string }
+-- @param opts table { lang = "en"|"fr", details = boolean, ["bib-dir"] = string }
 -- @param group_index integer|nil 1-based index into `data.groups`, if set
 -- @return integer
 function M.count(data, opts, group_index)
@@ -368,7 +368,7 @@ function M.count(data, opts, group_index)
   elseif data.en or data.fr then
     local side = opts.lang == "fr" and data.fr or data.en
     local n = count_entry_list(side and side.entries, opts)
-    if opts.long then
+    if opts.details then
       n = n + count_entry_list(side and side.long_entries, opts)
     end
     return n
@@ -385,7 +385,7 @@ end
 -- or a Pattern F document keyed by `en`/`fr`) into a list of pandoc
 -- Blocks.
 -- @param data table plain Lua table decoded from a data/<section>.yml file
--- @param opts table { lang = "en"|"fr", long = boolean }
+-- @param opts table { lang = "en"|"fr", details = boolean }
 -- @return pandoc.List of pandoc Block elements
 function M.render(data, opts)
   if data.groups then

@@ -9,27 +9,17 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 
-% Language: \ifenglish drives babel and is available to consuming
-% documents for their own EN/FR content. `include-in-header` files are
-% spliced in as raw text, not run through pandoc's template engine, so
-% $if(...)$ metadata conditionals don't work here. `english` is passed as
-% a classoption instead and read back via the LaTeX kernel's
-% \@ifclasswith (reports any option passed to \documentclass, whether or
-% not the class itself declares it).
-\makeatletter
+% Language: driven by Quarto's own native `lang:` document metadata (not
+% a custom key of this extension's) -- Quarto's default template already
+% turns `lang: en`/`lang: fr` into a `babel-lang` documentclass option
+% and loads babel accordingly (see doc-class.tex/babel-lang.tex in
+% Quarto's own PDF template), so babel is already active with the right
+% language by the time this file is spliced in. \ifenglish just exposes
+% that same choice to consuming documents' own raw LaTeX (e.g.
+% personal-macros.tex's EN/FR vocabulary macros) via babel's own
+% \iflanguage test -- no manual classoption/`\selectlanguage` needed.
 \newif\ifenglish
-\@ifclasswith{article}{english}{\englishtrue}{\englishfalse}
-\makeatother
-\usepackage[english,french]{babel}
-\ifenglish
-\selectlanguage{english}
-\addto\captionsfrench{% Replace "english" with the language you use
-  \renewcommand{\contentsname}%
-    {Table of contents}%
-}
-\else
-\selectlanguage{french}
-\fi
+\iflanguage{english}{\englishtrue}{\englishfalse}
 
 % Header/footer: no native Quarto equivalent.
 \usepackage{fancyhdr}
