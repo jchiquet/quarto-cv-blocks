@@ -55,8 +55,17 @@ title: My CV
 cv-blocks:
   lang: en      # or fr — selects the language-specific parts of the data
   long: true    # or false — selects the long/short variant of the data
+  compact: true # optional — one-page document, no running header/footer
 ---
 ```
+
+`long` and `compact` are independent: `long` only controls which
+`long_only`/`short_only` content shows, not page count — a document can
+show the short content set and still span several pages (e.g. a detailed
+"dossier scientifique" that happens to omit the long-only entries). Set
+`compact: true` only for a document that actually fits on one page, to
+drop fancyhdr's running header/footer (`\pagestyle{empty}` instead of the
+default `fancy`).
 
 `author`/`title` are Quarto's own native metadata keys, not specific to
 this extension — set once per document, or project-wide in `_quarto.yml`
@@ -206,6 +215,50 @@ bibliography:
 Bibliography groups can also be tagged `long_only`/`short_only`, same as
 entries.
 
+### Counting entries
+
+The `cv_count` shortcode counts the entries a `.cv-block`/
+`.cv-bibliography` Div pointed at the same file would render — handy for
+a hand-written summary sentence ("N students supervised", "N papers")
+that stays in sync with the data instead of a number updated by hand:
+
+```markdown
+{{< cv_count file="students.yml" >}}
+{{< cv_count file="students.yml" group=1 >}}
+```
+
+`file` resolves the same way as a Div's `file` attribute (against
+`cv-blocks.data-dir`); `group` restricts the count to one 1-based group
+index, e.g. to separate current students from alumni, or PhD students
+from Master's students, when both live in the same file as separate
+groups. The count always includes `long_only` content — a total like "47
+journal papers" belongs in a short CV's summary too — so it isn't
+affected by the document's own `cv-blocks.long` setting.
+
+Quote `file`/`group` values normally; inside a raw LaTeX
+(`` ```{=latex} ``) block specifically, put a space between a `{...}`
+argument delimiter and the shortcode's own `{{<` (e.g. `{Production}{
+{{< cv_count file="papers.yml" >}} papers}`, not `{Production}{{{<`) —
+three consecutive `{` otherwise confuses the shortcode parser.
+
+The `cv_keywords` shortcode joins a list-valued metadata field into a
+single separated string — handy for a "Themes"/"Research" line in the
+same summary, since Quarto's own `{{< meta >}}` shortcode refuses
+list-valued fields. Defaults to Quarto's native `keywords:`, `$\cdot$`
+separator; `field`/`sep` override either, e.g. to read Quarto's native
+`categories:` for a comma-separated list of research domains instead:
+
+```yaml
+keywords: [Sparse models, Multi-omics integration, Reproducible research]
+categories: [Statistical methods, Machine learning]
+```
+
+```markdown
+{{< cv_keywords >}}
+{{< cv_keywords sep=", " >}}
+{{< cv_keywords field="categories" sep=", " >}}
+```
+
 ### Executable code (figures, tables)
 
 A `cv-blocks-pdf` document is a regular Quarto document outside of its
@@ -257,8 +310,8 @@ long-only description paragraph on a supervised thesis — see
 "Content blocks" above.
 
 The source for these four documents (`cv-{en,fr}-{long,short}.qmd`,
-`_body.qmd`, `data/`) is at the root of this repo and doubles as a
-reference for the schema above:
+`data/`) is at the root of this repo and doubles as a reference for the
+schema above:
 
 ```sh
 quarto render                                   # all four

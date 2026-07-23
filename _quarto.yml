@@ -6,9 +6,9 @@ project:
     - "cv-fr-long.qmd"
     - "cv-fr-short.qmd"
 
+title: Example CV
 author:
   name: Jane Doe
   email: jane.doe@example.org
   url: https://example.org
 github: https://github.com/example
-title: Example CV

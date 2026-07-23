@@ -5,6 +5,8 @@ quarto-required: ">=1.4.0"
 contributes:
   filters:
     - cv-blocks.lua
+  shortcodes:
+    - cv-shortcodes.lua
   formats:
     pdf:
       filters:

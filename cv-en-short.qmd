@@ -2,12 +2,38 @@
 format:
   cv-blocks-pdf: default
 classoption: [10pt, english]
-bibliography:
-  - data/papers.bib
-  - data/talks.bib
+keywords: [Sparse models, Multi-omics integration, Reproducible research]
+categories: [Statistical methods, Machine learning]
 cv-blocks:
   lang: en
   long: false
+  compact: true
 ---
 
-{{< include _body.qmd >}}
+## {{< meta author >}} {.unnumbered}
+
+::: {.cv-personalinfo file="data/personal.yml"}
+:::
+
+### Brief summary of activities
+
+```{=latex}
+\multblock{Research}{ {{< cv_keywords field="categories" sep=", " >}} }
+{
+  {Themes}{ {{< cv_keywords >}} }
+  {Production}{ {{< cv_count file="data/papers.yml" group=1 >}} papers, {{< cv_count file="data/papers.yml" group=2 >}} talks}
+  {Students}{ {{< cv_count file="data/students.yml" group=1 >}} PhD, {{< cv_count file="data/students.yml" group=2 >}} Master}
+}
+
+\block{Teaching}{\rm Statistics in Action with R, Convex Optimization}
+```
+
+### Experience
+
+::: {.cv-block file="data/experience.yml"}
+:::
+
+### Education
+
+::: {.cv-block file="data/education.yml"}
+:::

@@ -2,6 +2,8 @@
 format:
   cv-blocks-pdf: default
 classoption: [10pt]
+keywords: [Modèles parcimonieux, Intégration multi-omique, Recherche reproductible]
+categories: [Méthodes statistiques, Apprentissage automatique]
 engine: knitr
 bibliography:
   - data/papers.bib
@@ -11,7 +13,64 @@ cv-blocks:
   long: true
 ---
 
-{{< include _body.qmd >}}
+## Curriculum Vitæ
+
+### {{< meta author >}}
+
+::: {.cv-personalinfo file="data/personal.yml"}
+:::
+
+### Bilan des activités
+
+```{=latex}
+\multblock{Recherche}{ {{< cv_keywords field="categories" sep=", " >}} }
+{
+  {Thèmes}{ {{< cv_keywords >}} }
+  {Production}{ {{< cv_count file="data/papers.yml" group=1 >}} articles, {{< cv_count file="data/papers.yml" group=2 >}} exposés}
+  {Doctorants}{ {{< cv_count file="data/students.yml" group=1 >}} thèse, {{< cv_count file="data/students.yml" group=2 >}} Master}
+}
+
+\block{Enseignement}{\rm Statistiques en action avec R, Optimisation convexe}
+```
+
+### Parcours professionnel
+
+::: {.cv-block file="data/experience.yml"}
+:::
+
+### Cursus universitaire
+
+::: {.cv-block file="data/education.yml"}
+:::
+
+## Activités scientifiques
+
+### Projets financés
+
+::: {.cv-block file="data/grants.yml"}
+:::
+
+### Animations et vie collectives
+
+::: {.cv-block file="data/activities.yml"}
+:::
+
+### Encadrements
+
+::: {.cv-block file="data/students.yml"}
+:::
+
+### Enseignements
+
+::: {.cv-block file="data/teachings.yml"}
+:::
+
+## Productions scientifiques
+
+### Publications
+
+::: {.cv-bibliography file="data/papers.yml"}
+:::
 
 ## Projets de recherche
 

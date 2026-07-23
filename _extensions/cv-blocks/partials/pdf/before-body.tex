@@ -1,6 +1,26 @@
 % Overrides Quarto's own before-body.tex (just a conditional \maketitle --
 % unused, since documents here build their own title page by hand).
 
+% A document that fits on one page (cv-blocks.compact: true) needs no
+% running header/footer -- switch off fancyhdr's pagestyle for it.
+% Independent of cv-blocks.long: that one selects long_only/short_only
+% *content*, not page count -- a document can show the short content set
+% and still span several pages (e.g. a dossier scientifique with
+% long: false), so it must keep the fancy pagestyle from
+% include-in-header.tex by default.
+$if(cv-blocks.compact)$
+\pagestyle{empty}
+$endif$
+
+% Quarto's own template unconditionally loads `parskip` (or falls back to
+% \setlength{\parskip}{6pt plus 2pt minus 1pt}), adding visible vertical
+% space between consecutive \multblock/\block entries -- each one is
+% emitted as its own paragraph (blank-line-separated) by cv-patterns.lua,
+% so every entry boundary is a new paragraph break under parskip's rules.
+% Reset to LaTeX's classic zero-\parskip so entries stay as tightly
+% spaced as the original cv.cls (which never loaded parskip).
+\setlength{\parskip}{0pt}
+
 % \nom/\title (used in the fancyhdr footer below, and freely in a
 % document's own raw LaTeX, e.g. a hand-built title page) come from
 % Quarto's native author/title metadata -- see the extension README,

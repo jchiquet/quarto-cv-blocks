@@ -21,3 +21,11 @@ groups:
           items:
             - label: {en: "Co-supervisor", fr: "Co-encadrant"}
               text: "Prof. Example"
+  - heading: {en: "Master students", fr: "Étudiants de Master"}
+    long_only: true
+    entries:
+      - date: "2023"
+        title: "John Roe -- Poisson-lognormal models for count data"
+        items:
+          - label: {en: "Co-supervisor", fr: "Co-encadrant"}
+            text: "Dr. Example"

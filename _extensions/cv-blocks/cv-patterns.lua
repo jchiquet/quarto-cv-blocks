@@ -305,6 +305,79 @@ function M.render_bibliography(data, opts)
 end
 
 -- ---------------------------------------------------------------------
+-- Counting: how many entries a `.cv-block`/`.cv-bibliography` Div
+-- pointed at this same file/group would actually render, respecting
+-- lang/long visibility and pattern D/E variants -- used by the
+-- `cv_count` shortcode (cv-shortcodes.lua) to keep a hand-written
+-- "N students supervised"-style summary in sync with the data instead
+-- of a number that silently drifts. Mirrors render_entry_list/
+-- render_group/render_bibliography's visibility logic exactly, but
+-- counts instead of emitting LaTeX.
+-- ---------------------------------------------------------------------
+
+local function count_entry_list(entries, opts)
+  local n = 0
+  for _, entry in ipairs(entries or {}) do
+    if entry_visible(entry, opts) then
+      if is_variant_entry(entry) then
+        local variant = select_variant(entry, opts)
+        if variant then
+          n = n + (is_entry_list(variant) and #variant or 1)
+        end
+      else
+        n = n + 1
+      end
+    end
+  end
+  return n
+end
+
+local function count_groups(groups, opts, group_index)
+  local n = 0
+  for i, group in ipairs(groups or {}) do
+    if not group_index or i == group_index then
+      if group.bib then
+        if not (group.long_only and not opts.long) then
+          local bib_dir = opts["bib-dir"]
+          local bib_path = bib_dir and (bib_dir .. "/" .. group.bib .. ".bib") or (group.bib .. ".bib")
+          local keys, err = cv_yaml.read_bib_keys(bib_path)
+          if not keys then
+            error(err)
+          end
+          n = n + #keys
+        end
+      elseif not (group.long_only and not opts.long) and not (group.short_only and opts.long) then
+        n = n + count_entry_list(group.entries, opts)
+      end
+    end
+  end
+  return n
+end
+
+--- Counts the entries a full data/<section>.yml document would render
+-- (see M.render), optionally restricted to a single group.
+-- @param data table plain Lua table decoded from a data/<section>.yml file
+-- @param opts table { lang = "en"|"fr", long = boolean, ["bib-dir"] = string }
+-- @param group_index integer|nil 1-based index into `data.groups`, if set
+-- @return integer
+function M.count(data, opts, group_index)
+  if data.groups then
+    return count_groups(data.groups, opts, group_index)
+  elseif data.entries then
+    return count_entry_list(data.entries, opts)
+  elseif data.en or data.fr then
+    local side = opts.lang == "fr" and data.fr or data.en
+    local n = count_entry_list(side and side.entries, opts)
+    if opts.long then
+      n = n + count_entry_list(side and side.long_entries, opts)
+    end
+    return n
+  else
+    error("cv-blocks: unrecognized data schema (expected top-level 'groups', 'entries', or 'en'/'fr' keys)")
+  end
+end
+
+-- ---------------------------------------------------------------------
 -- Entry point.
 -- ---------------------------------------------------------------------
 
