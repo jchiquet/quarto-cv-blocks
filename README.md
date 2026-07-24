@@ -349,6 +349,54 @@ to remember either way. No quoting needed for `file=`/`group=`/`field=`
 here (plain Lua pattern matching, not Pandoc's shortcode parser); always
 counts as a lifetime total, same as the real shortcode.
 
+### Generating an entry's items from another file
+
+An entry can carry a `roster:` instead of a hand-written `items:` list,
+to build a per-year breakdown from a separate, atomic data file instead
+of keeping the same facts written out twice. Handy when one file already
+lists atomic per-person/per-year facts for counting purposes (see
+"Counting entries" above) and another entry needs to *display* the same
+facts grouped by year:
+
+```yaml
+# juries.yml — atomic, one entry per participation
+groups:
+  - heading: {en: "PhD juries — reviewer", fr: "Jurys de thèse — rapporteur"}
+    entries:
+      - {date: 2025, title: "Julie Cartie"}
+      - {date: 2024, title: "Francesco Bonacina"}
+  - heading: {en: "PhD juries — examiner", fr: "Jurys de thèse — examinateur"}
+    entries:
+      - {date: 2024, title: "Baptiste Ruiz"}
+```
+
+```yaml
+# activities.yml — displays the same facts as one item per year
+entries:
+  - date: ""
+    title: "\\phdjury"
+    roster:
+      - {file: juries.yml, group: 3, label: "\\reviewer"}
+      - {file: juries.yml, group: 4, label: "\\examiner"}
+```
+
+renders as (most recent year first):
+
+```
+2025   Reviewer: Julie Cartie
+2024   Reviewer: Francesco Bonacina; Examiner: Baptiste Ruiz
+```
+
+Each `roster` section's `file`/`group` resolves the same way as
+`cv_count`'s. Within a year, that section's entries join with `", "`;
+multiple sections in the same year join with `"; "`, each prefixed with
+its own `label` — a single section with no `label` (e.g.
+`data/phdfollowup.yml`, which has only one role: the follow-up itself)
+joins names directly with no prefix. `roster` is ignored if the entry
+also has a plain `items:` list.
+
+### `cv_keywords`
+
 The `cv_keywords` shortcode joins a list-valued metadata field into a
 single separated string — handy for a "Themes"/"Research" line in the
 same summary, since Quarto's own `{{< meta >}}` shortcode refuses
