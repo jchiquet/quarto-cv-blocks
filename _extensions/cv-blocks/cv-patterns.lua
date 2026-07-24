@@ -122,6 +122,27 @@ local function expand_inline_counts(text, opts)
   return text
 end
 
+-- TeX's classic "--"/"---" -> en-/em-dash ligature building silently
+-- fails for \sc (URW Avant Garde small caps, loaded as a plain Type1/TFM
+-- font) specifically once fontawesome pulls in fontspec/luaotfload under
+-- LuaLaTeX -- confirmed empirically: \multblock's \sf date ("2023--2027")
+-- ligates fine (its font is OpenType, shaped by luaotfload directly),
+-- while the same entry's \sc title ("DISCERN -- Discovering...") does
+-- not, rendering a literal double hyphen instead of an en dash. Explicit
+-- `\textendash`/`\textemdash` sidestep the broken ligature entirely (an
+-- actual glyph request instead of a ligature substitution), so this
+-- converts the ASCII source once here rather than requiring every data
+-- file to spell dashes out by hand. "---" first, so it isn't consumed as
+-- "--" plus a stray "-".
+local function normalize_dashes(text)
+  if type(text) ~= "string" then
+    return text
+  end
+  text = text:gsub("%-%-%-", "\\textemdash{}")
+  text = text:gsub("%-%-", "\\textendash{}")
+  return text
+end
+
 -- ---------------------------------------------------------------------
 -- Shared i18n resolver: any short label (group heading, item label) can
 -- be a plain string, an {en:, fr:} pair, a {long:, short:} pair, or an
@@ -136,7 +157,7 @@ local function resolve_i18n(value, opts)
     return nil
   end
   if type(value) ~= "table" then
-    return expand_inline_counts(value, opts)
+    return normalize_dashes(expand_inline_counts(value, opts))
   end
   if value.en ~= nil or value.fr ~= nil then
     return resolve_i18n(lang_pick(value, opts), opts)
@@ -384,7 +405,7 @@ local function render_group(group, opts, blocks)
 
   if group.long_only and not opts.details then
     if group.short_fallback then
-      local text = expand_inline_counts(lang_pick(group.short_fallback, opts), opts)
+      local text = normalize_dashes(expand_inline_counts(lang_pick(group.short_fallback, opts), opts))
       blocks:insert(pandoc.RawBlock("latex", text or ""))
     end
     return
@@ -425,7 +446,7 @@ local function resolve_pattern_f(data, opts)
   local blocks = pandoc.List({})
 
   if not opts.details and side.short_note then
-    blocks:insert(pandoc.RawBlock("latex", expand_inline_counts(side.short_note, opts)))
+    blocks:insert(pandoc.RawBlock("latex", normalize_dashes(expand_inline_counts(side.short_note, opts))))
   end
   if side.spacer then
     local macro = SPACER_MACRO[side.spacer]
@@ -509,8 +530,8 @@ function M.render_header(data, opts)
     photo = opts["cv-data-dir"] .. "/" .. photo
   end
 
-  local bio = table.concat(side.bio, "\\\\\n    ")
-  local address = table.concat(side.address, "\\\\\n    ")
+  local bio = normalize_dashes(table.concat(side.bio, "\\\\\n    "))
+  local address = normalize_dashes(table.concat(side.address, "\\\\\n    "))
   local address_label = lang_pick(ADDRESS_LABEL, opts)
 
   local blocks = pandoc.List({})
