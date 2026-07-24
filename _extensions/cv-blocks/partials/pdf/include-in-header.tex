@@ -48,7 +48,24 @@
 % Aliases for custom @Type names from the old bibtex/mycv.bst pipeline
 % that biblatex doesn't know (biber would otherwise error with a
 % misleading "found {...}, expected ="). Harmless if unused.
-\DeclareBibliographyAlias{hdrthesis}{phdthesis}
+%
+% hdrthesis specifically aliases to `thesis`, not `phdthesis`: unlike
+% invited/school/seminaire/soft below, `phdthesis` isn't a real bbx
+% driver -- it's a legacy BibTeX type name biber itself recognizes and
+% silently rewrites to biblatex's actual `thesis` entrytype (plus a
+% `type` field) before biblatex.sty ever sees an entrytype called
+% "phdthesis". Since biber doesn't know our custom `@HDRThesis` type,
+% it passes "hdrthesis" straight through unconverted, so the alias has
+% to target a driver that genuinely exists -- confirmed empirically: an
+% alias to `phdthesis` compiles without error but renders the entry
+% completely empty (no driver named that), while aliasing to `thesis`
+% (paired with `type = {hdrthesis}` on the entry itself, see
+% chiquet_thesis.bib) renders it exactly like a real phdthesis/
+% mastersthesis entry, just labelled "Habilitation thesis" instead.
+\DeclareBibliographyAlias{hdrthesis}{thesis}
+\NewBibliographyString{hdrthesis}
+\DefineBibliographyStrings{english}{hdrthesis = {Habilitation thesis}}
+\DefineBibliographyStrings{french}{hdrthesis = {HDR}}
 \DeclareBibliographyAlias{invited}{inproceedings}
 \DeclareBibliographyAlias{school}{unpublished}
 \DeclareBibliographyAlias{seminaire}{unpublished}
