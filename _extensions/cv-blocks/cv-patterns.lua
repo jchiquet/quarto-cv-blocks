@@ -28,10 +28,107 @@ local function bib_path(group, opts)
 end
 
 -- ---------------------------------------------------------------------
+-- Inline counts: `{{< cv_count file="..." group=N >}}` / `{{< cv_sum
+-- file="..." field="..." group=N >}}` embedded directly inside an opaque
+-- text field (item text, a group's `short_fallback`, Pattern F's
+-- `short_note`...), e.g. a `\phdjury` short-mode entry summarizing a
+-- long list as "19 as reviewer, 11 as examiner" from a separate, atomic
+-- data/juries.yml, or a `short_fallback` sentence collapsing a whole
+-- long_only group ("22 MSc students") -- the same "stay in sync with the
+-- data instead of a hand-updated number" job the `cv_count`/`cv_sum`
+-- shortcodes do for the qmd body (see cv-shortcodes.lua and the README,
+-- "Counting entries"), but reachable from *inside* a data file, where
+-- content arrives via `cv_yaml.read_yaml_file` (a plain `io.open` + JSON
+-- decode) rather than Pandoc's own markdown parsing -- so it never passes
+-- through Quarto's shortcode-expansion pass and a literal
+-- `{{< cv_count ... >}}` there would otherwise survive untouched into the
+-- final LaTeX. Deliberately reuses the shortcode's own `{{< ... >}}`
+-- syntax (rather than inventing a second placeholder convention) so
+-- there's exactly one thing to remember regardless of where the count is
+-- written; unlike the real shortcode, quoting `file=`/`group=` is not
+-- required here (plain Lua pattern matching, no interaction with
+-- Pandoc/Quarto's own parser).
+--
+-- Always counts/sums as a lifetime total (`details = true`), same
+-- rationale as the shortcode: a number quoted inside running prose
+-- ("19 jurys as reviewer") is a fact about the world, not something that
+-- should silently change count depending on which document currently
+-- happens to be rendering it.
+local function parse_shortcode_attrs(attrs)
+  local kv = {}
+  for key, val in attrs:gmatch('([%a][%w%-_]*)%s*=%s*"([^"]*)"') do
+    kv[key] = val
+  end
+  for key, val in attrs:gmatch('([%a][%w%-_]*)%s*=%s*([%w%.]+)') do
+    if kv[key] == nil then
+      kv[key] = val
+    end
+  end
+  return kv
+end
+
+local function resolve_inline_count_path(file, opts)
+  if opts["cv-data-dir"] and not file:match("^/") then
+    return opts["cv-data-dir"] .. "/" .. file
+  end
+  return file
+end
+
+local function load_inline_count_data(kv, opts, tag)
+  if not kv.file then
+    return nil, "[" .. tag .. ": missing file=]"
+  end
+  local data, err = cv_yaml.read_yaml_file(resolve_inline_count_path(kv.file, opts))
+  if not data then
+    return nil, "[" .. tag .. ": " .. tostring(err) .. "]"
+  end
+  return data, nil
+end
+
+local function expand_inline_counts(text, opts)
+  if type(text) ~= "string" or not text:find("cv_count", 1, true) and not text:find("cv_sum", 1, true) then
+    return text
+  end
+
+  text = text:gsub("{{<%s*cv_count%s+(.-)%s*>}}", function(attrs)
+    local kv = parse_shortcode_attrs(attrs)
+    local data, err = load_inline_count_data(kv, opts, "cv_count")
+    if not data then
+      return err
+    end
+    local ok, n = pcall(M.count, data, { lang = opts.lang, details = true }, kv.group and tonumber(kv.group))
+    if not ok then
+      return "[cv_count: " .. tostring(n) .. "]"
+    end
+    return tostring(n)
+  end)
+
+  text = text:gsub("{{<%s*cv_sum%s+(.-)%s*>}}", function(attrs)
+    local kv = parse_shortcode_attrs(attrs)
+    if not kv.field then
+      return "[cv_sum: missing field=]"
+    end
+    local data, err = load_inline_count_data(kv, opts, "cv_sum")
+    if not data then
+      return err
+    end
+    local ok, n = pcall(M.sum, data, { lang = opts.lang, details = true }, kv.group and tonumber(kv.group), kv.field)
+    if not ok then
+      return "[cv_sum: " .. tostring(n) .. "]"
+    end
+    return string.format("%g", n)
+  end)
+
+  return text
+end
+
+-- ---------------------------------------------------------------------
 -- Shared i18n resolver: any short label (group heading, item label) can
 -- be a plain string, an {en:, fr:} pair, a {long:, short:} pair, or an
 -- {en: {long:, short:}, fr: {long:, short:}} nesting of both (in either
--- order) -- resolved recursively so all combinations fall out for free.
+-- order) -- resolved recursively so all combinations fall out for free,
+-- with any embedded `{{< cv_count ... >}}`/`{{< cv_sum ... >}}` expanded
+-- at the leaf (see expand_inline_counts above).
 -- ---------------------------------------------------------------------
 
 local function resolve_i18n(value, opts)
@@ -39,7 +136,7 @@ local function resolve_i18n(value, opts)
     return nil
   end
   if type(value) ~= "table" then
-    return value
+    return expand_inline_counts(value, opts)
   end
   if value.en ~= nil or value.fr ~= nil then
     return resolve_i18n(lang_pick(value, opts), opts)
@@ -167,7 +264,7 @@ local function render_group(group, opts, blocks)
 
   if group.long_only and not opts.details then
     if group.short_fallback then
-      local text = lang_pick(group.short_fallback, opts)
+      local text = expand_inline_counts(lang_pick(group.short_fallback, opts), opts)
       blocks:insert(pandoc.RawBlock("latex", text or ""))
     end
     return
@@ -208,7 +305,7 @@ local function resolve_pattern_f(data, opts)
   local blocks = pandoc.List({})
 
   if not opts.details and side.short_note then
-    blocks:insert(pandoc.RawBlock("latex", side.short_note))
+    blocks:insert(pandoc.RawBlock("latex", expand_inline_counts(side.short_note, opts)))
   end
   if side.spacer then
     local macro = SPACER_MACRO[side.spacer]
