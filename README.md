@@ -328,6 +328,27 @@ entries:
 Same `file`/`group` resolution and quoting rules as `cv_count`; `field`
 is required (no sensible default).
 
+Both also work directly *inside* a data file's own opaque text (item
+`text`, a group's `short_fallback`, Pattern F's `short_note`...) — not
+just in the qmd body:
+
+```yaml
+# activities.yml, a \phdjury entry's short-mode variant
+short:
+  items:
+    - label: {en: "since 2015", fr: "depuis 2015"}
+      text: "{{< cv_count file=\"juries.yml\" group=3 >}} as reviewer, {{< cv_count file=\"juries.yml\" group=4 >}} as examiner."
+```
+
+This isn't the real Quarto shortcode (those only expand inside the
+qmd's own parsed markdown; text loaded from a data file via
+`cv_yaml.read_yaml_file` never passes through that pass) — it's the
+same `{{< cv_count ... >}}`/`{{< cv_sum ... >}}` syntax recognized and
+expanded by the extension's own Lua instead, so there's one convention
+to remember either way. No quoting needed for `file=`/`group=`/`field=`
+here (plain Lua pattern matching, not Pandoc's shortcode parser); always
+counts as a lifetime total, same as the real shortcode.
+
 The `cv_keywords` shortcode joins a list-valued metadata field into a
 single separated string — handy for a "Themes"/"Research" line in the
 same summary, since Quarto's own `{{< meta >}}` shortcode refuses
