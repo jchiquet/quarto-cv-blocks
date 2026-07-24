@@ -101,4 +101,72 @@ function M.read_bib_keys(path)
   return keys
 end
 
+local BIB_FIELD = [[
+import sys, re, json
+
+path, key, field = sys.argv[1], sys.argv[2], sys.argv[3]
+text = open(path, encoding="utf-8").read()
+
+entry_re = re.compile(r"@\w+\s*\{\s*" + re.escape(key) + r"\s*,")
+m = entry_re.search(text)
+if not m:
+    print(json.dumps(None))
+    sys.exit(0)
+
+start = m.end()
+next_at = text.find("\n@", start)
+entry_text = text[start:next_at if next_at != -1 else len(text)]
+
+field_re = re.compile(r"\b" + re.escape(field) + r"\s*=\s*\{", re.IGNORECASE)
+fm = field_re.search(entry_text)
+if not fm:
+    print(json.dumps(None))
+    sys.exit(0)
+
+i = fm.end()
+depth = 1
+start_val = i
+n = len(entry_text)
+while i < n and depth > 0:
+    c = entry_text[i]
+    if c == "{":
+        depth += 1
+    elif c == "}":
+        depth -= 1
+    i += 1
+print(json.dumps(entry_text[start_val:i - 1]))
+]]
+
+--- Extracts a single field's raw value from one entry of a .bib file
+-- (e.g. `abstract`), via balanced-brace scanning -- handles nested
+-- braces (LaTeX capitalization guards like `{Gaussian}`) that a plain
+-- regex over `field\s*=\s*\{([^}]*)\}` would cut short at the first
+-- inner `}`. Not a real BibTeX parser, same "good enough" spirit as
+-- read_bib_keys above, but this one has to preserve a field's actual
+-- content instead of just spotting a key.
+-- @param path string path to a .bib file
+-- @param key string citation key of the entry to look up
+-- @param field string field name (case-insensitive), e.g. "abstract"
+-- @return string|nil the field's raw value, or nil if the entry/field
+--   isn't found, or (nil, error message) on I/O/decode failure
+function M.read_bib_field(path, key, field)
+  local fh = io.open(path, "r")
+  if not fh then
+    return nil, ("cv-blocks: cannot find bib file " .. path)
+  end
+  fh:close()
+
+  local ok, json_text = pcall(pandoc.pipe, "python3", { "-c", BIB_FIELD, path, key, field }, "")
+  if not ok then
+    return nil, ("cv-blocks: failed to extract field from " .. path .. ": " .. tostring(json_text))
+  end
+
+  local ok2, value = pcall(pandoc.json.decode, json_text)
+  if not ok2 then
+    return nil, ("cv-blocks: failed to decode field value from " .. path .. ": " .. tostring(value))
+  end
+
+  return value
+end
+
 return M

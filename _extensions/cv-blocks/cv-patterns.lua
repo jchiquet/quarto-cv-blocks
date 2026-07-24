@@ -228,17 +228,56 @@ end
 -- ---------------------------------------------------------------------
 
 local FUNDING_LABEL = { en = "Support", fr = "Financement" }
+local SUMMARY_LABEL = { en = "Summary", fr = "Résumé" }
 
---- Renders one {date, title, items?, funding?} entry as a \multblock
--- (items present) or \block (no items) call. `title`, `date`, `item.text`
--- and `funding` are opaque raw LaTeX content -- never escaped or
--- reinterpreted -- but each may itself be an {en:, fr:} pair (same
--- resolver as `item.label`/group headings), so a single entry can carry
--- per-language text for just the fields that actually differ, instead of
--- duplicating the whole entry via the Pattern D en/fr variant. `funding`
--- (the funder/grant type -- "ANR", "Horizon Europe", ...) is shorthand
--- for a trailing item with that fixed EN/FR label, instead of writing it
--- out on every grant entry by hand.
+-- A bib field's path is resolved against `bib-dir`, same as a bibliography
+-- group's `.bib` -- unlike `bib_path` above, `abstract_from.file` already
+-- carries its own `.bib` extension (same convention as `roster.file`),
+-- so it's just concatenated, not appended.
+local function resolve_bib_path(file, opts)
+  local bib_dir = opts["bib-dir"]
+  return bib_dir and (bib_dir .. "/" .. file) or file
+end
+
+--- Renders one {date, title, items?, funding?, abstract_from?} entry as
+-- a \multblock (items present) or \block (no items) call. `title`,
+-- `date`, `item.text` and `funding` are opaque raw LaTeX content --
+-- never escaped or reinterpreted -- but each may itself be an {en:, fr:}
+-- pair (same resolver as `item.label`/group headings), so a single entry
+-- can carry per-language text for just the fields that actually differ,
+-- instead of duplicating the whole entry via the Pattern D en/fr
+-- variant. `funding` (the funder/grant type -- "ANR", "Horizon
+-- Europe", ...) is shorthand for a trailing item with that fixed EN/FR
+-- label, instead of writing it out on every grant entry by hand.
+--
+-- `abstract_from: {file, key, field?}` pulls a long-form summary
+-- straight out of a .bib entry (e.g. a supervised thesis's own
+-- `abstract`/`abstract_fr` field in student_theses.bib) instead of
+-- keeping a second copy of it in this YAML file -- one editing point,
+-- shared with whatever else already reads that .bib (e.g. the website's
+-- student pages). Only shown when `opts.details` (the long CV) -- a
+-- thesis abstract has no place in a one-page short CV. Picks
+-- `field` if given; otherwise `abstract_fr`/`abstract` by document
+-- language, falling back to `abstract` if the language-specific field
+-- isn't written yet (better an English summary than none while
+-- translations catch up).
+local function append_abstract_item(items, entry, opts)
+  if not (entry.abstract_from and opts.details) then
+    return
+  end
+  local path = resolve_bib_path(entry.abstract_from.file, opts)
+  local key = entry.abstract_from.key
+  local field = entry.abstract_from.field or (opts.lang == "fr" and "abstract_fr" or "abstract")
+
+  local ok, value = pcall(cv_yaml.read_bib_field, path, key, field)
+  if (not ok or not value) and not entry.abstract_from.field and field ~= "abstract" then
+    ok, value = pcall(cv_yaml.read_bib_field, path, key, "abstract")
+  end
+  if ok and value then
+    table.insert(items, { label = SUMMARY_LABEL, text = value })
+  end
+end
+
 local function render_simple_entry(entry, opts)
   local date = resolve_i18n(entry.date, opts) or ""
   local title = resolve_i18n(entry.title, opts) or ""
@@ -254,6 +293,7 @@ local function render_simple_entry(entry, opts)
   if entry.funding then
     table.insert(items, { label = FUNDING_LABEL, text = entry.funding })
   end
+  append_abstract_item(items, entry, opts)
 
   if #items > 0 then
     local pairs_latex = {}
