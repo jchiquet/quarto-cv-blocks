@@ -12,9 +12,7 @@ bibliography:
   - data/talks.bib
 ---
 
-## Curriculum Vitae
-
-### {{< meta author >}}
+## {{< meta author >}} - Curriculum Vitae
 
 ### Researcher in Statistics
 

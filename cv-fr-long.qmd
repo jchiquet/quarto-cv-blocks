@@ -12,9 +12,7 @@ bibliography:
   - data/talks.bib
 ---
 
-## Curriculum Vitæ
-
-### {{< meta author >}}
+## {{< meta author >}} - Curriculum Vitae
 
 ### Chercheuse
 
