@@ -166,7 +166,10 @@ function M.read_bib_field(path, key, field)
     return nil, ("cv-blocks: failed to decode field value from " .. path .. ": " .. tostring(value))
   end
 
-  return value
+  -- pandoc.json.decode represents JSON `null` (field/entry not found) as
+  -- a distinct userdata sentinel, not Lua `nil` -- same gotcha strip_json_null
+  -- works around in read_yaml_file above; callers need a plain falsy nil.
+  return strip_json_null(value)
 end
 
 return M
