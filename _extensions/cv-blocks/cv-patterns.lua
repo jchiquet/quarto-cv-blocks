@@ -148,6 +148,82 @@ local function resolve_i18n(value, opts)
 end
 
 -- ---------------------------------------------------------------------
+-- Pattern G: an entry's `items` computed from one or more atomic
+-- data/<file>.yml roster files (juries.yml, phdfollowup.yml, ...) instead
+-- of typed out by hand -- so a per-year breakdown shown inside e.g.
+-- activities.yml's \hdrjury/\phdjury/\phdfollowup entries stays in sync
+-- with the same atomic entries `{{< cv_count >}}` already totals
+-- elsewhere (see expand_inline_counts above), instead of being copied
+-- into activities.yml by hand every time a jury or follow-up is added.
+--
+--   - date: ""
+--     title: "\\hdrjury"
+--     roster:
+--       - {file: juries.yml, group: 1, label: "\\reviewer"}
+--       - {file: juries.yml, group: 2, label: "\\examiner"}
+--
+-- Each roster entry (`{date, title}`, same shape as any other simple
+-- entry -- `title` here is a person's name) is bucketed by `date`
+-- (treated as a year), one output item per distinct year, most recent
+-- first. Within a year, entries from the same `roster` section are
+-- joined with ", "; sections are joined with "; ", each prefixed with
+-- its own `label` (e.g. "\reviewer: A, B") -- except a lone section with
+-- no `label`, which joins names directly with no prefix (phdfollowup.yml
+-- has only one role: the follow-up itself).
+local function roster_year_key(date)
+  local n = tonumber(date)
+  return n and string.format("%g", n) or tostring(date)
+end
+
+local function roster_source_entries(file, group_index, opts)
+  local data, err = cv_yaml.read_yaml_file(resolve_inline_count_path(file, opts))
+  if not data then
+    error(err)
+  end
+  if group_index then
+    local group = (data.groups or {})[group_index]
+    return (group and group.entries) or {}
+  end
+  return data.entries or {}
+end
+
+local function build_roster_items(roster, opts)
+  local years = {}
+  local year_order = {}
+
+  for _, section in ipairs(roster) do
+    for _, e in ipairs(roster_source_entries(section.file, section.group, opts)) do
+      local year = roster_year_key(e.date)
+      if not years[year] then
+        years[year] = {}
+        table.insert(year_order, year)
+      end
+      local by_label = years[year]
+      local key = section.label or ""
+      if not by_label[key] then
+        by_label[key] = { label = section.label, names = {} }
+        table.insert(by_label, key)
+      end
+      table.insert(by_label[key].names, e.title)
+    end
+  end
+
+  table.sort(year_order, function(a, b) return tonumber(a) > tonumber(b) end)
+
+  local items = {}
+  for _, year in ipairs(year_order) do
+    local parts = {}
+    for _, key in ipairs(years[year]) do
+      local section = years[year][key]
+      local names = table.concat(section.names, ", ")
+      table.insert(parts, section.label and (section.label .. ": " .. names) or names)
+    end
+    table.insert(items, { label = year, text = table.concat(parts, "; ") })
+  end
+  return items
+end
+
+-- ---------------------------------------------------------------------
 -- Base primitive: one resolved {date, title, items?} entry.
 -- ---------------------------------------------------------------------
 
@@ -168,7 +244,11 @@ local function render_simple_entry(entry, opts)
   local title = resolve_i18n(entry.title, opts) or ""
 
   local items = {}
-  for _, item in ipairs(entry.items or {}) do
+  local source_items = entry.items
+  if not source_items and entry.roster then
+    source_items = build_roster_items(entry.roster, opts)
+  end
+  for _, item in ipairs(source_items or {}) do
     table.insert(items, item)
   end
   if entry.funding then
