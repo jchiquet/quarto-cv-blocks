@@ -16,15 +16,16 @@ bibliography:
 
 ### {{< meta author >}}
 
-::: {.cv-personalinfo file="data/personal.yml"}
+### Chercheuse
+
+::: {.cv-header file="data/personal.yml"}
 :::
 
 ### Bilan des activités
 
 ```{=latex}
-\multblock{Recherche}{ {{< cv_keywords field="categories" sep=", " >}} }
+\multblock{Activité}{\rm depuis 2010}
 {
-  {Thèmes}{ {{< cv_keywords >}} }
   {Production}{ {{< cv_count file="data/papers.yml" group=1 >}} articles, {{< cv_count file="data/papers.yml" group=2 >}} exposés}
   {Doctorants}{ {{< cv_count file="data/students.yml" group=1 >}} thèse, {{< cv_count file="data/students.yml" group=2 >}} Master}
 }
@@ -60,6 +61,10 @@ bibliography:
 :::
 
 ### Enseignements
+
+```{=latex}
+Environ 2000 heures d'enseignement. Enseignant à l'université Exemple de 2015 à 2024.
+```
 
 ::: {.cv-block file="data/teachings.yml"}
 :::

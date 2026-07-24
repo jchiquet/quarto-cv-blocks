@@ -1,4 +1,4 @@
--- cv-blocks: filter entry point. Dispatches .cv-block/.cv-personalinfo/
+-- cv-blocks: filter entry point. Dispatches .cv-block/.cv-header/
 -- .cv-bibliography Divs to cv-patterns.lua's renderers -- see the README
 -- for the full data-file schema.
 --
@@ -7,7 +7,7 @@
 --   ::: {.cv-block file="students.yml"}
 --   :::
 --
---   ::: {.cv-personalinfo file="personal.yml"}
+--   ::: {.cv-header file="personal.yml"}
 --   :::
 --
 --   ::: {.cv-bibliography file="papers.yml"}
@@ -16,7 +16,10 @@
 -- `file` is resolved relative to the input document by default, or to
 -- `cv-data-dir` if set under `format.cv-blocks-pdf` in document/project
 -- metadata. Bibliography `.bib` file paths (referenced by name inside the
--- YAML, not `file`) are resolved the same way against `bib-dir`.
+-- YAML, not `file`) are resolved the same way against `bib-dir` -- and so
+-- is Quarto's own native `bibliography:` metadata list (each bare entry
+-- gets `bib-dir` prefixed, so it doesn't need repeating on every line;
+-- entries that already look absolute are left alone).
 --
 -- Language is Quarto's own native, top-level `lang:` key -- this
 -- extension only supports "en"/"fr" (any other value falls back to
@@ -49,9 +52,8 @@ local opts = { lang = "en", details = true }
 -- Quarto normalizes the document's `author:` metadata into `authors`
 -- (a list of structured records with `name`/`email`/`url`/... fields,
 -- the same one its own PDF template uses for `\author{...}`) before our
--- filter runs. `.cv-personalinfo` uses the first author's email/url
--- instead of requiring them again in the data file -- see the README,
--- "Personal info".
+-- filter runs. `.cv-header` uses the first author's email/url instead of
+-- requiring them again in the data file -- see the README, "Usage".
 local function read_author(meta)
   local authors = meta.authors
   if not authors or not authors[1] then
@@ -72,6 +74,21 @@ local function read_author(meta)
   end
 end
 
+-- Joins a list-valued metadata field (Quarto's native `categories:`/
+-- `keywords:`) with a separator, for `.cv-header`'s research-domain/theme
+-- tagline -- nil if the field is unset, so the tagline line it belongs to
+-- is skipped entirely rather than rendered empty.
+local function join_meta_list(list, sep)
+  if not list then
+    return nil
+  end
+  local items = {}
+  for _, item in ipairs(list) do
+    table.insert(items, pandoc.utils.stringify(item))
+  end
+  return table.concat(items, sep)
+end
+
 local function read_opts(meta)
   read_author(meta)
 
@@ -85,24 +102,43 @@ local function read_opts(meta)
   if meta["bib-dir"] then
     opts["bib-dir"] = pandoc.utils.stringify(meta["bib-dir"])
   end
-end
-
-local function data_dir(meta)
   if meta["cv-data-dir"] then
-    return pandoc.utils.stringify(meta["cv-data-dir"])
+    opts["cv-data-dir"] = pandoc.utils.stringify(meta["cv-data-dir"])
   end
-  return nil
+  opts.categories = join_meta_list(meta.categories, ", ")
+  opts.keywords = join_meta_list(meta.keywords, " $\\cdot$ ")
 end
 
-local function resolve_path(file, meta)
-  local dir = data_dir(meta)
-  if dir then
-    return dir .. "/" .. file
+-- Prefixes every native `bibliography:` entry with `bib-dir`, so it can
+-- list bare filenames (`chiquet_journal.bib`) instead of repeating the
+-- full path on every line -- entries that already look absolute are left
+-- alone. Rewriting `meta.bibliography` here (in the Meta filter) reaches
+-- Quarto's own template, which resolves it into `\addbibresource{...}`
+-- calls after all filters have run (confirmed empirically).
+local function rewrite_bibliography(meta)
+  if not meta.bibliography or not opts["bib-dir"] then
+    return
+  end
+  local rewritten = pandoc.List({})
+  for _, entry in ipairs(meta.bibliography) do
+    local path = pandoc.utils.stringify(entry)
+    if not path:match("^/") then
+      path = opts["bib-dir"] .. "/" .. path
+    end
+    rewritten:insert(pandoc.MetaString(path))
+  end
+  meta.bibliography = rewritten
+end
+
+-- `cv-data-dir` is already resolved into opts by read_opts (the Meta pass
+-- always runs before any Div is visited), so a Div's `file` attribute can
+-- just reuse it directly instead of re-reading the Meta table.
+local function resolve_path(file)
+  if opts["cv-data-dir"] then
+    return opts["cv-data-dir"] .. "/" .. file
   end
   return file
 end
-
-local Meta
 
 -- Loads the YAML file a Div's `file` attribute points at; returns
 -- (data, nil) on success or (nil, RawBlock-with-error) on failure, so
@@ -113,7 +149,7 @@ local function load_div_data(div)
     return nil, pandoc.RawBlock("latex", "% cv-blocks: Div missing required 'file' attribute")
   end
 
-  local path = resolve_path(file, Meta)
+  local path = resolve_path(file)
   local data, err = cv_yaml.read_yaml_file(path)
   if not data then
     return nil, pandoc.RawBlock("latex", "% cv-blocks: " .. tostring(err))
@@ -139,7 +175,7 @@ return {
   {
     Meta = function(meta)
       read_opts(meta)
-      Meta = meta
+      rewrite_bibliography(meta)
       return meta
     end,
   },
@@ -151,8 +187,8 @@ return {
       if div.classes:includes("cv-block") then
         return render_with(cv_patterns.render, div)
       end
-      if div.classes:includes("cv-personalinfo") then
-        return render_with(cv_patterns.render_personal_info, div)
+      if div.classes:includes("cv-header") then
+        return render_with(cv_patterns.render_header, div)
       end
       if div.classes:includes("cv-bibliography") then
         return render_with(cv_patterns.render_bibliography, div)

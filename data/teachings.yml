@@ -1,5 +1,4 @@
 en:
-  intro: "Approximately 2000 hours of teaching. Lecturer at Example University from 2015 to 2024."
   short_note: "Only the most notable courses are listed here."
   spacer: medskip
   entries:
@@ -15,7 +14,6 @@ en:
         - label: "Msc"
           text: "Gradient methods, Newton method, Proximal methods"
 fr:
-  intro: "Environ 2000 heures d'enseignement. Enseignant à l'université Exemple de 2015 à 2024."
   short_note: "Seuls les enseignements les plus notables sont listés ici."
   spacer: medskip
   entries:

@@ -11,15 +11,16 @@ categories: [Méthodes statistiques, Apprentissage automatique]
 
 ## {{< meta author >}} {.unnumbered}
 
-::: {.cv-personalinfo file="data/personal.yml"}
+### Chercheuse {.unnumbered}
+
+::: {.cv-header file="data/personal.yml"}
 :::
 
 ### Bilan des activités
 
 ```{=latex}
-\multblock{Recherche}{ {{< cv_keywords field="categories" sep=", " >}} }
+\multblock{Activité}{\rm depuis 2010}
 {
-  {Thèmes}{ {{< cv_keywords >}} }
   {Production}{ {{< cv_count file="data/papers.yml" group=1 >}} articles, {{< cv_count file="data/papers.yml" group=2 >}} exposés}
   {Doctorants}{ {{< cv_count file="data/students.yml" group=1 >}} thèse, {{< cv_count file="data/students.yml" group=2 >}} Master}
 }

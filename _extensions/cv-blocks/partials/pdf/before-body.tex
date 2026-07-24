@@ -1,54 +1,45 @@
-% Overrides Quarto's own before-body.tex (just a conditional \maketitle --
-% unused, since documents here build their own title page by hand).
+% Overrides Quarto's before-body.tex (a conditional \maketitle) -- \title
+% is repurposed below, so \maketitle wouldn't work here anyway.
 
-% A document that fits on one page (format.cv-blocks-pdf.compact: true)
-% needs no running header/footer -- switch off fancyhdr's pagestyle for
-% it. Independent of `details`: that one selects long_only/short_only
-% *content*, not page count -- a document can show the short content set
-% and still span several pages (e.g. a dossier scientifique with
-% details: false), so it must keep the fancy pagestyle from
-% include-in-header.tex by default.
+% compact drops the running header/footer for a one-page document.
+% Independent of `details` (content selection, not page count) -- a
+% dossier scientifique can have details:false and still span pages, so it
+% keeps the fancy pagestyle from include-in-header.tex by default.
 $if(compact)$
 \pagestyle{empty}
 $endif$
 
-% Quarto's own template unconditionally loads `parskip` (or falls back to
-% \setlength{\parskip}{6pt plus 2pt minus 1pt}), adding visible vertical
-% space between consecutive \multblock/\block entries -- each one is
-% emitted as its own paragraph (blank-line-separated) by cv-patterns.lua,
-% so every entry boundary is a new paragraph break under parskip's rules.
-% Reset to LaTeX's classic zero-\parskip so entries stay as tightly
-% spaced as the original cv.cls (which never loaded parskip).
+% Quarto's template loads parskip (or a nonzero fallback), adding space
+% between \multblock/\block entries (each its own paragraph). Reset to
+% zero for the tight spacing the original cv.cls had.
 \setlength{\parskip}{0pt}
 
-% \nom/\title (used in the fancyhdr footer below, and freely in a
-% document's own raw LaTeX, e.g. a hand-built title page) come from
-% Quarto's native author/title metadata -- see the extension README,
-% "Usage". Every consuming document is expected to set both. `\title` is
-% already a real article.cls command (its argument sets \@title, used by
-% \maketitle, which this extension never calls) -- \renewcommand
-% repurposes it as a plain text-holding macro instead.
+% \nom/\title come from Quarto's native author/title metadata -- see the
+% README, "Usage". \title is article.cls's own command (feeds \maketitle,
+% never called here), repurposed via \renewcommand as plain text, reused
+% in the footer below and freely in a document's own raw LaTeX.
 \renewcommand{\title}{$title$}
 \def\nom{$for(authors)$$it.name.literal$$sep$ \and $endfor$}
 
 % Used by the fancyhdr footer in include-in-header.tex.
 \newcommand{\footer}{\nom\ -- \title}
 
-% Colors. Referenced by `linkcolor`/`urlcolor`/`citecolor` (native
-% metadata, resolved into \hypersetup{...} in the preamble) and by
-% \titleformat below -- works even though this runs after \begin{document}
-% since hyperref/xcolor resolve color names lazily, only when typeset.
+% Colors for linkcolor/urlcolor/citecolor and \titleformat below --
+% defining them here (after \begin{document}) is fine since hyperref/xcolor
+% resolve color names lazily.
 \definecolor{mblue}{rgb}{.204,.353,.541}
 \colorlet{mred}{red!80!black}
 
-% Small caps via URW Avant Garde instead of LaTeX's default (faked, from
-% the current font) small caps. \fontencoding{T1} is needed under
-% LuaLaTeX, which defaults to TU encoding and only has T1 shapes for
-% "pag" -- harmless under pdflatex too, since T1 is already the active
-% encoding there (include-in-header.tex loads fontenc[T1] unconditionally).
+% Small caps via URW Avant Garde instead of LaTeX's faked small caps.
+% \fontencoding{T1} is needed under LuaLaTeX (defaults to TU); harmless
+% under pdflatex, where T1 is already active.
 \renewcommand{\sc}{\fontencoding{T1}\fontfamily{pag}\fontseries{m}\fontshape{sc}\selectfont}
 \renewcommand{\textsc}[1]{{\sc#1}}
 
+% Quarto sets shift-heading-level-by: -1 whenever `title:` is set, so `##`
+% is a document's top heading level (\section) -- \part only applies to a
+% `#` heading, which none of the examples use, but stays defined for
+% consistency if a document ever does.
 \titleformat{\part}{\sc\huge\color{mred}}{}{0pt}{\noindent\hrulefill~#1~\hrulefill}
 \titleformat{\section}{\sc\huge\color{mred}}{}{0pt}{\noindent\hrulefill~#1~\hrulefill}
 \titleformat{\subsection}{\sc\Large\color{mred}}{}{0pt}{\noindent#1~\hrulefill}
@@ -58,7 +49,7 @@ $endif$
 \titlespacing{\subparagraph}{0pt}{0pt}{0pt}
 
 % \multblock/\block: the two primitives cv-patterns.lua's raw LaTeX
-% output is built from -- see the extension README ("How it works").
+% output is built from -- see the README ("How it works").
 \newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 
 \newcommand*{\multblock}[3]{%
@@ -82,5 +73,19 @@ $endif$
   \fi
 }
 
-% Profondeur 1 de la table des matières
+% TOC entries down to \subsubsection (used by frontpage below).
 \setcounter{tocdepth}{3}
+
+% Optional title/cover page (format.cv-blocks-pdf.frontpage: true)
+$if(frontpage)$
+\thispagestyle{plain}
+\begin{center}
+  \huge{\textsc{\nom}} \\
+  \vspace{\baselineskip}
+  \Large{\textsc{\title\\}}
+\end{center}
+\vspace{2.5\baselineskip}
+\begin{center}{Last update:\ \today}\end{center}
+\tableofcontents
+\newpage
+$endif$

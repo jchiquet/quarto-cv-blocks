@@ -11,6 +11,22 @@ local cv_yaml = require("cv-yaml")
 
 local M = {}
 
+-- Picks `t.fr`/`t.en` by the document's own language -- the one primitive
+-- every EN/FR selection in this file (resolve_i18n, Pattern D/F documents,
+-- the address label) is built from.
+local function lang_pick(t, opts)
+  return opts.lang == "fr" and t.fr or t.en
+end
+
+-- A bibliography group's .bib path, resolved against `bib-dir` the same
+-- way a `.cv-block` Div's `file` attribute is resolved against
+-- `cv-data-dir` -- shared by render_bibliography and count_groups
+-- (M.count doesn't render, but still needs each bib group's key count).
+local function bib_path(group, opts)
+  local bib_dir = opts["bib-dir"]
+  return bib_dir and (bib_dir .. "/" .. group.bib .. ".bib") or (group.bib .. ".bib")
+end
+
 -- ---------------------------------------------------------------------
 -- Shared i18n resolver: any short label (group heading, item label) can
 -- be a plain string, an {en:, fr:} pair, a {long:, short:} pair, or an
@@ -26,7 +42,7 @@ local function resolve_i18n(value, opts)
     return value
   end
   if value.en ~= nil or value.fr ~= nil then
-    return resolve_i18n(opts.lang == "fr" and value.fr or value.en, opts)
+    return resolve_i18n(lang_pick(value, opts), opts)
   end
   if value.long ~= nil or value.short ~= nil then
     return resolve_i18n(opts.details and value.long or value.short, opts)
@@ -38,20 +54,36 @@ end
 -- Base primitive: one resolved {date, title, items?} entry.
 -- ---------------------------------------------------------------------
 
---- Renders one {date, title, items?} entry as a \multblock (items
--- present) or \block (no items) call. `title`/`item.text` are opaque raw
--- LaTeX and are never escaped or reinterpreted (spec: "le contenu ...
--- reste opaque"). `item.label` is a short vocabulary word, not opaque
--- content, so it goes through the same i18n resolver as group headings.
-local function render_simple_entry(entry, opts)
-  local date = entry.date or ""
-  local title = entry.title or ""
+local FUNDING_LABEL = { en = "Support", fr = "Financement" }
 
-  if entry.items and #entry.items > 0 then
+--- Renders one {date, title, items?, funding?} entry as a \multblock
+-- (items present) or \block (no items) call. `title`, `date`, `item.text`
+-- and `funding` are opaque raw LaTeX content -- never escaped or
+-- reinterpreted -- but each may itself be an {en:, fr:} pair (same
+-- resolver as `item.label`/group headings), so a single entry can carry
+-- per-language text for just the fields that actually differ, instead of
+-- duplicating the whole entry via the Pattern D en/fr variant. `funding`
+-- (the funder/grant type -- "ANR", "Horizon Europe", ...) is shorthand
+-- for a trailing item with that fixed EN/FR label, instead of writing it
+-- out on every grant entry by hand.
+local function render_simple_entry(entry, opts)
+  local date = resolve_i18n(entry.date, opts) or ""
+  local title = resolve_i18n(entry.title, opts) or ""
+
+  local items = {}
+  for _, item in ipairs(entry.items or {}) do
+    table.insert(items, item)
+  end
+  if entry.funding then
+    table.insert(items, { label = FUNDING_LABEL, text = entry.funding })
+  end
+
+  if #items > 0 then
     local pairs_latex = {}
-    for _, item in ipairs(entry.items) do
+    for _, item in ipairs(items) do
       local label = resolve_i18n(item.label, opts) or ""
-      table.insert(pairs_latex, string.format("{%s}{%s}", label, item.text or ""))
+      local text = resolve_i18n(item.text, opts) or ""
+      table.insert(pairs_latex, string.format("{%s}{%s}", label, text))
     end
     return string.format("\\multblock{%s}{%s}{%s}", date, title, table.concat(pairs_latex))
   else
@@ -70,7 +102,7 @@ end
 
 local function select_variant(entry, opts)
   if entry.en ~= nil or entry.fr ~= nil then
-    return opts.lang == "fr" and entry.fr or entry.en
+    return lang_pick(entry, opts)
   end
   return opts.details and entry.long or entry.short
 end
@@ -135,7 +167,7 @@ local function render_group(group, opts, blocks)
 
   if group.long_only and not opts.details then
     if group.short_fallback then
-      local text = opts.lang == "fr" and group.short_fallback.fr or group.short_fallback.en
+      local text = lang_pick(group.short_fallback, opts)
       blocks:insert(pandoc.RawBlock("latex", text or ""))
     end
     return
@@ -168,16 +200,13 @@ local SPACER_MACRO = {
 }
 
 local function resolve_pattern_f(data, opts)
-  local side = opts.lang == "fr" and data.fr or data.en
+  local side = lang_pick(data, opts)
   if not side then
     error("cv-patterns: pattern F data has no '" .. tostring(opts.lang) .. "' key")
   end
 
   local blocks = pandoc.List({})
 
-  if side.intro then
-    blocks:insert(pandoc.RawBlock("latex", side.intro))
-  end
   if not opts.details and side.short_note then
     blocks:insert(pandoc.RawBlock("latex", side.short_note))
   end
@@ -202,36 +231,103 @@ local function resolve_pattern_f(data, opts)
 end
 
 -- ---------------------------------------------------------------------
--- Personal info block: name/contact block under the CV header. The
--- layout (two-column tabular, icon-prefixed contact lines) lives here as
--- generic code; the content (bio lines, position, address) comes from
--- data/personal.yml. Column widths differ EN/FR since French text needs
--- a wider left column.
+-- Header block: optional research-domain/theme tagline (from `categories:`/
+-- `keywords:` metadata) followed by the name/contact block, optionally
+-- preceded by a photo column. The layout (tabular of minipages,
+-- icon-prefixed contact lines) lives here as generic code; the content
+-- (bio lines, address, photo path) comes from data/personal.yml. Column
+-- widths differ EN/FR since French text needs a wider bio column. A
+-- document's job title/position is its own heading in the qmd body
+-- instead (see the README, "Usage"), not part of this block.
 -- ---------------------------------------------------------------------
 
 local PERSONAL_INFO_WIDTH = {
   en = { left = "0.6", right = "0.4" },
   fr = { left = "0.5", right = "0.5" },
 }
+local PERSONAL_INFO_WIDTH_WITH_PHOTO = {
+  en = { photo = "0.16", left = "0.46", right = "0.38" },
+  fr = { photo = "0.16", left = "0.35", right = "0.49" },
+}
 
---- Renders the personal-info block (name/contact block under the CV
--- header) from data/personal.yml content. `email`/`web`/`github` come
--- from the document's own metadata (see cv-blocks.lua's read_author),
--- not from this file, to avoid a second place to keep them in sync.
--- @param data table { en = {bio, position, address}, fr = {...} }
--- @param opts table { lang = "en"|"fr", email, web, github }
+-- Heads the address column with a fixed EN/FR label -- mainly so the two
+-- (or three, with a photo) columns occupy the same vertical space (bio +
+-- contact icons on the left vs. just an address, otherwise visibly
+-- shorter).
+local ADDRESS_LABEL = { en = "Professional address", fr = "Adresse professionnelle" }
+
+-- Photo height, not width: both a portrait photo and a square placeholder
+-- avatar then scale to the same vertical space as the bio/address
+-- columns beside them (roughly what a 6-line contact block takes),
+-- regardless of their own aspect ratio.
+local PHOTO_HEIGHT = "2.3cm"
+
+-- Nudges the photo above the plain top-of-first-line alignment `\raisebox{-\height}`
+-- gives it, and adds breathing room between the photo and the bio column.
+local PHOTO_RAISE = "3mm"
+local PHOTO_GAP = "2.5em"
+
+-- Breathing room between the bio/contact column and the address column.
+local ADDRESS_GAP = "1.5em"
+
+--- Renders the header block (optional tagline + photo + name/contact
+-- block under the CV header) from data/personal.yml content.
+-- `email`/`web`/`github` come from the document's own metadata (see
+-- cv-blocks.lua's read_author), not from this file, to avoid a second
+-- place to keep them in sync -- same for `categories`/`keywords` (see
+-- read_opts).
+-- @param data table { photo?, en = {bio, address}, fr = {...} }
+-- @param opts table { lang = "en"|"fr", email, web, github, categories?, keywords? }
 -- @return pandoc.List of pandoc Block elements
-function M.render_personal_info(data, opts)
-  local side = opts.lang == "fr" and data.fr or data.en
-  local width = PERSONAL_INFO_WIDTH[opts.lang] or PERSONAL_INFO_WIDTH.en
+function M.render_header(data, opts)
+  local side = lang_pick(data, opts)
+  local width_table = data.photo and PERSONAL_INFO_WIDTH_WITH_PHOTO or PERSONAL_INFO_WIDTH
+  local width = width_table[opts.lang] or width_table.en
+
+  -- `photo` is resolved against `cv-data-dir`, same as a `.cv-block`
+  -- Div's `file` attribute or a bibliography `bib:` entry -- a bare
+  -- filename doesn't need `cv-data-dir` repeated in it.
+  local photo = data.photo
+  if photo and opts["cv-data-dir"] and not photo:match("^/") then
+    photo = opts["cv-data-dir"] .. "/" .. photo
+  end
 
   local bio = table.concat(side.bio, "\\\\\n    ")
   local address = table.concat(side.address, "\\\\\n    ")
+  local address_label = lang_pick(ADDRESS_LABEL, opts)
+
+  local blocks = pandoc.List({})
+
+  if opts.categories or opts.keywords then
+    local tagline = string.format(
+      [[
+\large\itshape\color{mred} %s \\[0.3em]
+\normalsize\upshape\color{black} %s
+\vspace{1em}]],
+      opts.categories or "", opts.keywords or ""
+    )
+    blocks:insert(pandoc.RawBlock("latex", tagline))
+  end
+
+  local photo_column = ""
+  local col_spec = string.format("@{}l@{\\hspace{%s}}r@{}", ADDRESS_GAP)
+  if photo then
+    photo_column = string.format(
+      [[
+  \begin{minipage}[t]{%s\textwidth}
+    \raisebox{-\height+%s}{\includegraphics[height=%s,keepaspectratio]{%s}}
+  \end{minipage}
+  &
+]],
+      width.photo, PHOTO_RAISE, PHOTO_HEIGHT, photo
+    )
+    col_spec = string.format("@{}l@{\\hspace{%s}}l@{\\hspace{%s}}r@{}", PHOTO_GAP, ADDRESS_GAP)
+  end
 
   local tex = string.format(
     [[
-\noindent\begin{tabular}{@{}l@{}r@{}}
-  \begin{minipage}[t]{%s\textwidth}
+\noindent\begin{tabular}{%s}
+%s  \begin{minipage}[t]{%s\textwidth}
     %s\\[1ex]
     {\scriptsize\faEnvelope}~\href{mailto:%s}{\texttt{%s}}\\
     {\scriptsize\faFirefox}~\href{%s}{\texttt{%s}}\\
@@ -239,15 +335,17 @@ function M.render_personal_info(data, opts)
   \end{minipage}
   &
   \begin{minipage}[t]{%s\textwidth}
-    %s\\[1ex]
+    \textsf{%s}\\[1ex]
     %s
   \end{minipage}
 \end{tabular}]],
+    col_spec, photo_column,
     width.left, bio, opts.email, opts.email, opts.web, opts.web, opts.github, opts.github,
-    width.right, side.position, address
+    width.right, address_label, address
   )
+  blocks:insert(pandoc.RawBlock("latex", tex))
 
-  return pandoc.List({ pandoc.RawBlock("latex", tex) })
+  return blocks
 end
 
 -- ---------------------------------------------------------------------
@@ -287,9 +385,7 @@ function M.render_bibliography(data, opts)
         blocks:insert(pandoc.RawBlock("latex", "\\subsubsection{" .. heading .. "}"))
       end
 
-      local bib_dir = opts["bib-dir"]
-      local bib_path = bib_dir and (bib_dir .. "/" .. group.bib .. ".bib") or (group.bib .. ".bib")
-      local keys, err = cv_yaml.read_bib_keys(bib_path)
+      local keys, err = cv_yaml.read_bib_keys(bib_path(group, opts))
       if not keys then
         error(err)
       end
@@ -338,9 +434,7 @@ local function count_groups(groups, opts, group_index)
     if not group_index or i == group_index then
       if group.bib then
         if not (group.long_only and not opts.details) then
-          local bib_dir = opts["bib-dir"]
-          local bib_path = bib_dir and (bib_dir .. "/" .. group.bib .. ".bib") or (group.bib .. ".bib")
-          local keys, err = cv_yaml.read_bib_keys(bib_path)
+          local keys, err = cv_yaml.read_bib_keys(bib_path(group, opts))
           if not keys then
             error(err)
           end
@@ -366,12 +460,82 @@ function M.count(data, opts, group_index)
   elseif data.entries then
     return count_entry_list(data.entries, opts)
   elseif data.en or data.fr then
-    local side = opts.lang == "fr" and data.fr or data.en
+    local side = lang_pick(data, opts)
     local n = count_entry_list(side and side.entries, opts)
     if opts.details then
       n = n + count_entry_list(side and side.long_entries, opts)
     end
     return n
+  else
+    error("cv-blocks: unrecognized data schema (expected top-level 'groups', 'entries', or 'en'/'fr' keys)")
+  end
+end
+
+-- ---------------------------------------------------------------------
+-- Summing: total of a numeric field (e.g. `hours:`) across the entries a
+-- `.cv-block` Div pointed at this same file/group would render -- same
+-- visibility/variant logic as counting above, but adds up a field's
+-- value instead of adding 1 per entry. Used by the `cv_sum` shortcode
+-- for a "~N hours of teaching"-style summary that stays in sync with the
+-- data instead of a hand-maintained estimate.
+-- ---------------------------------------------------------------------
+
+local function sum_entry_list(entries, opts, field)
+  local total = 0
+  for _, entry in ipairs(entries or {}) do
+    if entry_visible(entry, opts) then
+      if is_variant_entry(entry) then
+        local variant = select_variant(entry, opts)
+        if variant then
+          if is_entry_list(variant) then
+            for _, sub_entry in ipairs(variant) do
+              total = total + (tonumber(sub_entry[field]) or 0)
+            end
+          else
+            total = total + (tonumber(variant[field]) or 0)
+          end
+        end
+      else
+        total = total + (tonumber(entry[field]) or 0)
+      end
+    end
+  end
+  return total
+end
+
+local function sum_groups(groups, opts, group_index, field)
+  local total = 0
+  for i, group in ipairs(groups or {}) do
+    if not group_index or i == group_index then
+      if not (group.long_only and not opts.details) and not (group.short_only and opts.details) then
+        total = total + sum_entry_list(group.entries, opts, field)
+      end
+    end
+  end
+  return total
+end
+
+--- Sums a numeric field across the entries a full data/<section>.yml
+-- document would render (see M.render), optionally restricted to a
+-- single group. Bibliography groups (`group.bib`) aren't supported --
+-- there's no per-entry numeric field to sum in a .bib file.
+-- @param data table plain Lua table decoded from a data/<section>.yml file
+-- @param opts table { lang = "en"|"fr", details = boolean }
+-- @param group_index integer|nil 1-based index into `data.groups`, if set
+-- @param field string entry field name to sum, e.g. "hours"
+-- @return number
+function M.sum(data, opts, group_index, field)
+  if data.groups then
+    return sum_groups(data.groups, opts, group_index, field)
+  elseif data.entries then
+    return sum_entry_list(data.entries, opts, field)
+  elseif data.en or data.fr then
+    local side = lang_pick(data, opts)
+    local total = sum_entry_list(side and side.entries, opts, field)
+    if opts.details then
+      total = total + sum_entry_list(side and side.long_entries, opts, field)
+    end
+    return total
   else
     error("cv-blocks: unrecognized data schema (expected top-level 'groups', 'entries', or 'en'/'fr' keys)")
   end

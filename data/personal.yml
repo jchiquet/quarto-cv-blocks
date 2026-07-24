@@ -1,10 +1,13 @@
 # email/web/github come from the `author`/`github` metadata in
-# _quarto.yml instead -- see the extension README, "Personal info".
+# _quarto.yml instead -- see the extension README, "Header". `photo` is a
+# placeholder avatar (commons.wikimedia.org/wiki/File:Default_pfp.svg) --
+# replace with a real photo, or drop the key to go back to a two-column
+# header with no photo.
+photo: data/photo.png
 en:
   bio:
     - "Born January 1, 1990"
     - "Example citizen"
-  position: "{\\sc Researcher} in Statistics"
   address:
     - "Example Institute"
     - "1 Example Street"
@@ -13,7 +16,6 @@ fr:
   bio:
     - "Née le 1 janvier 1990"
     - "Citoyenne d'exemple"
-  position: "{\\sc Chercheuse}"
   address:
     - "Institut Exemple"
     - "1 rue de l'exemple"

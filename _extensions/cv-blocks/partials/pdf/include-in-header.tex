@@ -3,21 +3,16 @@
 % colorlinks/linkcolor/urlcolor/citecolor). Only what has no YAML
 % equivalent stays as raw LaTeX here.
 
-% fonts.latex is overridden as a no-op (see partials/pdf/fonts.latex), so
-% fontenc/inputenc need loading explicitly -- \fontencoding{T1} (small-caps
-% fix below) needs a T1 encoding to select.
+% fonts.latex is a no-op override (see partials/pdf/fonts.latex), so
+% fontenc/inputenc need loading explicitly.
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 
-% Language: driven by Quarto's own native `lang:` document metadata (not
-% a custom key of this extension's) -- Quarto's default template already
-% turns `lang: en`/`lang: fr` into a `babel-lang` documentclass option
-% and loads babel accordingly (see doc-class.tex/babel-lang.tex in
-% Quarto's own PDF template), so babel is already active with the right
-% language by the time this file is spliced in. \ifenglish just exposes
-% that same choice to consuming documents' own raw LaTeX (e.g.
-% personal-macros.tex's EN/FR vocabulary macros) via babel's own
-% \iflanguage test -- no manual classoption/`\selectlanguage` needed.
+% Quarto's own template already turns the document's `lang:` into babel's
+% main language (documentclass option + \usepackage{babel}), so babel is
+% already active here. \ifenglish exposes that choice to consuming
+% documents' own raw LaTeX (e.g. personal-macros.tex's EN/FR vocabulary)
+% via babel's \iflanguage.
 \newif\ifenglish
 \iflanguage{english}{\englishtrue}{\englishfalse}
 
@@ -35,9 +30,9 @@
 % before-body.tex, alongside the colors they use.
 \usepackage[explicit]{titlesec}
 
-% array: needed for the custom R{<width>} column type \multblock relies
-% on. Also loaded by Quarto's own tables.tex, but load it explicitly so
-% \multblock keeps working if a document ever disables that (`tables: false`).
+% array: needed for \multblock's custom R{<width>} column type. Also
+% loaded by Quarto's own tables.tex, but load it explicitly so \multblock
+% still works if a document sets `tables: false`.
 \usepackage{array}
 
 \usepackage{url}
@@ -45,11 +40,17 @@
 \usepackage{fontawesome}
 
 % float: needed for the [H] placement specifier, so a captioned figure
-% (e.g. in a "Research Project" section from executable code) stays
-% exactly where it's placed instead of drifting as a normal LaTeX float
-% -- see the extension README, "Executable code". Not needed for tables:
-% pandoc emits captioned tables as `longtable`, which isn't a float.
+% stays exactly where it's placed instead of drifting -- see the README,
+% "Executable code". Not needed for tables: pandoc emits them as
+% `longtable`, which isn't a float.
 \usepackage{float}
 
-% This document's own personal macros (\nom, \title, ...) and any EN/FR
-% vocabulary it needs -- see the extension README, "Usage".
+% Aliases for custom @Type names from the old bibtex/mycv.bst pipeline
+% that biblatex doesn't know (biber would otherwise error with a
+% misleading "found {...}, expected ="). Harmless if unused.
+\DeclareBibliographyAlias{hdrthesis}{phdthesis}
+\DeclareBibliographyAlias{invited}{inproceedings}
+\DeclareBibliographyAlias{school}{unpublished}
+\DeclareBibliographyAlias{seminaire}{unpublished}
+\DeclareBibliographyAlias{soft}{misc}
+\DeclareBibliographyAlias{preprint}{unpublished}

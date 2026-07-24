@@ -5,7 +5,7 @@
 A Quarto extension for writing an academic CV/resume as data (YAML files)
 rather than hand-formatted LaTeX. It provides a PDF format
 (`cv-blocks-pdf`) and three content blocks (`.cv-block`,
-`.cv-personalinfo`, `.cv-bibliography`) that render structured entries —
+`.cv-header`, `.cv-bibliography`) that render structured entries —
 positions, degrees, grants, teaching, publications — as clean two-column
 LaTeX blocks. Content can be tagged English/French and long/short so the
 same data files produce a full CV or a one-page summary in either
@@ -26,7 +26,7 @@ language.
 - Optionally, **R or Python with a plotting/table library** (e.g.
   `ggplot2`/`knitr`, or `matplotlib`/`pandas`) if a document uses
   executable code chunks — see "Executable code" below. Not required
-  just to use `.cv-block`/`.cv-personalinfo`/`.cv-bibliography`. On a
+  just to use `.cv-block`/`.cv-header`/`.cv-bibliography`. On a
   fresh Ubuntu machine (as in CI, see `.github/workflows/build.yml`),
   installing `ggplot2` from source needs a few system libraries first:
   `libcurl4-openssl-dev`, `libfontconfig1-dev`, `libharfbuzz-dev`,
@@ -51,8 +51,9 @@ lang: en          # or fr -- this extension only supports these two
 fontsize: 10pt
 format:
   cv-blocks-pdf:
-    details: true   # or false — selects the long/short variant of the data
-    compact: true   # optional — one-page document, no running header/footer
+    details: true     # or false — selects the long/short variant of the data
+    compact: true     # optional — one-page document, no running header/footer
+    frontpage: true   # optional — cover page (name, title, date, TOC) before the body
 author: Jane Doe
 title: My CV
 ---
@@ -93,8 +94,15 @@ this extension — set once per document, or project-wide in `_quarto.yml`
 if every document shares the same author (as the four example CVs at the
 root of this repo do — see there). The extension uses them to define
 `\nom`/`\title`, the two macros the fancyhdr footer relies on, and that a
-document can freely reuse in its own raw LaTeX (e.g. a hand-built title
-page). No `header-includes` needed just for that.
+document can freely reuse in its own raw LaTeX. No `header-includes`
+needed just for that.
+
+`frontpage: true` adds a cover page before the body — centered name/title,
+a "Last update: <today>" line, and a `\tableofcontents` — built from
+`\nom`/`\title`, so no raw LaTeX needed for it either. Meant for a longer,
+multi-part document (e.g. a "dossier scientifique"); most documents here
+put the name/personal info directly as the first heading instead (see the
+four example CVs) and leave this off (the default).
 
 Then use the content blocks in the document body.
 
@@ -123,17 +131,31 @@ groups:
 :::
 ```
 
-`heading` and `label` are short vocabulary words, resolved against the
-document's `lang`/`details` metadata — each can be a
-plain string, an `{en:, fr:}` pair, a `{long:, short:}` pair, or both
-nested (`{en: {long:, short:}, fr: {long:, short:}}`) when a heading
-needs to vary along both axes. `date`/`title`/`item.text` are opaque raw
-LaTeX content and aren't translated by the extension — write the
-localized text directly, or use the `en`/`fr` entry variants below.
+`heading`, `label`, `date`, `title`, `item.text` and `funding` are all
+resolved against the document's `lang`/`details` metadata the same way:
+each can be a plain string, an `{en:, fr:}` pair, a `{long:, short:}`
+pair, or both nested (`{en: {long:, short:}, fr: {long:, short:}}`) when
+a field needs to vary along both axes. `date`/`title`/`item.text`/
+`funding` are otherwise opaque raw LaTeX content and never reinterpreted
+beyond that — write the localized text directly on the field that
+differs, or replace the whole entry with an `en`/`fr` variant (below) if
+more than a couple of fields differ.
 
 Entries can also be tagged `long_only`/`short_only`, or replaced by an
 `en`/`fr` or `long`/`short` variant — see the data files under `data/` in
 this repo for worked examples of every pattern.
+
+A `funding` field is shorthand for a trailing item with a fixed EN/FR
+"Support"/"Financement" label — for a grant's funder or type (ANR,
+Horizon Europe, ...), instead of writing that item out by hand on every
+entry:
+
+```yaml
+entries:
+  - date: "2023--2027"
+    title: "A funded project"
+    funding: "Horizon Europe"
+```
 
 An `item`'s `text` isn't limited to a short value: it's typeset in a wide
 table column, so a longer sentence just wraps like a paragraph. Combined
@@ -163,28 +185,42 @@ entries:
 See `data/grants.yml` (the "DISCERN" grant) and `data/students.yml` for
 worked examples.
 
-### Personal info
+### Header
 
-A `.cv-personalinfo` Div's `file` attribute points at a YAML file with
-just a short bio (email/web/github come from document metadata instead,
-see below):
+A `.cv-header` Div's `file` attribute points at a YAML file with just a
+short bio (email/web/github come from document metadata instead, see
+below):
 
 ```yaml
 # personal.yml
+photo: photo.jpg   # optional -- resolved against cv-data-dir, like `file`
 en:
   bio: ["Born January 1, 1990"]
-  position: "Researcher"
   address: ["Example Institute", "1 Example Street"]
 fr:
   bio: ["Née le 1 janvier 1990"]
-  position: "Chercheuse"
   address: ["Institut Exemple", "1 rue de l'exemple"]
 ```
 
 ```markdown
-::: {.cv-personalinfo file="personal.yml"}
+## {{< meta author >}} {.unnumbered}
+
+### Researcher in Statistics {.unnumbered}
+
+::: {.cv-header file="personal.yml"}
 :::
 ```
+
+renders as a research-domain/theme tagline (from `categories:`/
+`keywords:` metadata, if set — skipped entirely if neither is) followed
+by the name/contact block, itself preceded by a `photo` column if set (a
+JPG/PNG, scaled to a fixed height so it occupies about the same vertical
+space as the bio/address columns beside it, regardless of its own aspect
+ratio — column widths adjust automatically to make room for it). A job
+title/position isn't part of this data file — it's just a heading in the
+document body, styled the same way as any other section, placed between
+the name and this Div (see the four example CVs at the root of this
+repo).
 
 The email/web/github contact line comes from document metadata instead
 of `personal.yml` — `email`/`url` from Quarto's native `author:` schema,
@@ -237,6 +273,12 @@ bibliography:
   - talks.bib
 ```
 
+Each entry is resolved against `bib-dir` too, same as a `bib:` field in a
+`.cv-bibliography` data file — an entry that already looks like an
+absolute path is left alone, so `bib-dir` can be set once (e.g. to an
+external repo the real `.bib` files live in) instead of repeating it on
+every `bibliography:` line.
+
 Bibliography groups can also be tagged `long_only`/`short_only`, same as
 entries.
 
@@ -265,6 +307,26 @@ Quote `file`/`group` values normally; inside a raw LaTeX
 argument delimiter and the shortcode's own `{{<` (e.g. `{Production}{
 {{< cv_count file="papers.yml" >}} papers}`, not `{Production}{{{<`) —
 three consecutive `{` otherwise confuses the shortcode parser.
+
+The `cv_sum` shortcode is the same idea for a numeric field instead of
+entries — e.g. a per-entry `hours:` field on `data/teachings.yml`, for a
+"~N hours of teaching" sentence that stays in sync instead of a
+hand-maintained estimate:
+
+```yaml
+# teachings.yml
+entries:
+  - date: "2020--24"
+    title: "Statistics in Action with R"
+    hours: 60
+```
+
+```markdown
+{{< cv_sum file="teachings.yml" field="hours" >}}
+```
+
+Same `file`/`group` resolution and quoting rules as `cv_count`; `field`
+is required (no sensible default).
 
 The `cv_keywords` shortcode joins a list-valued metadata field into a
 single separated string — handy for a "Themes"/"Research" line in the

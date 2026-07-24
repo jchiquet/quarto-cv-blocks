@@ -16,15 +16,16 @@ bibliography:
 
 ### {{< meta author >}}
 
-::: {.cv-personalinfo file="data/personal.yml"}
+### Researcher in Statistics
+
+::: {.cv-header file="data/personal.yml"}
 :::
 
 ### Brief summary of activities
 
 ```{=latex}
-\multblock{Research}{ {{< cv_keywords field="categories" sep=", " >}} }
+\multblock{Activity}{\rm since 2010}
 {
-  {Themes}{ {{< cv_keywords >}} }
   {Production}{ {{< cv_count file="data/papers.yml" group=1 >}} papers, {{< cv_count file="data/papers.yml" group=2 >}} talks}
   {Students}{ {{< cv_count file="data/students.yml" group=1 >}} PhD, {{< cv_count file="data/students.yml" group=2 >}} Master}
 }
@@ -60,6 +61,10 @@ bibliography:
 :::
 
 ### Teaching
+
+```{=latex}
+Approximately 2000 hours of teaching. Lecturer at Example University from 2015 to 2024.
+```
 
 ::: {.cv-block file="data/teachings.yml"}
 :::
