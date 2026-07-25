@@ -620,7 +620,12 @@ function M.render_bibliography(data, opts)
     if not (group.long_only and not opts.details) then
       local heading = resolve_i18n(group.heading, opts)
       if heading then
-        blocks:insert(pandoc.RawBlock("latex", "\\subsubsection{" .. heading .. "}"))
+        -- `\label{sec:bib-<prefix>}` lets other content (e.g. a
+        -- `.cv-block` entry elsewhere in the document) cross-reference
+        -- this bibliography section with `\S\ref{sec:bib-RT}` -- the
+        -- group's own `prefix` (e.g. "RT") is already a short, unique,
+        -- LaTeX-label-safe handle, so no extra YAML field is needed.
+        blocks:insert(pandoc.RawBlock("latex", "\\subsubsection{" .. heading .. "}\\label{sec:bib-" .. group.prefix .. "}"))
       end
 
       local keys, err = cv_yaml.read_bib_keys(bib_path(group, opts))
