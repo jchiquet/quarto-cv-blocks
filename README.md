@@ -185,6 +185,41 @@ entries:
 See `data/grants.yml` (the "DISCERN" grant) and `data/students.yml` for
 worked examples.
 
+A `.cv-block` can override the document's `details:` setting for just
+that block, so one document can mix long and short sections:
+
+```markdown
+::: {.cv-block file="students.yml"}
+:::
+
+::: {.cv-block file="teachings.yml" details="false"}
+:::
+```
+
+### Plain markdown content
+
+Outside `.cv-block`/`.cv-header`/`.cv-bibliography` Divs, a document's own
+markdown content gets two style tweaks to match the rest of the CV instead
+of LaTeX's defaults:
+
+- An itemize list (`- item`) gets an en-dash bullet instead of the default
+  round bullet.
+- A definition list (`Term\n:   Definition`) renders as the same
+  right-aligned-label, ruled, two-column table as `\multblock`/`\block`
+  (see "Content blocks" above), instead of LaTeX's plain `description`
+  environment:
+
+  ```markdown
+  Production
+  :   {{< cv_count file="papers.yml" group=1 >}} papers, {{< cv_count file="papers.yml" group=2 >}} talks.
+
+  Students
+  :   {{< cv_count file="students.yml" >}} supervised.
+  ```
+
+  This is the way to get a `\multblock`-style summary without writing raw
+  LaTeX in the `.qmd` body.
+
 ### Header
 
 A `.cv-header` Div's `file` attribute points at a YAML file with just a
