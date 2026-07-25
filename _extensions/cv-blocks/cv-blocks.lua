@@ -39,6 +39,17 @@
 --     cv-blocks-pdf:
 --       details: true          # or false; default true
 --
+-- A single `.cv-block` can override that document-wide default with its
+-- own `details` Div attribute, for a document that mixes long and short
+-- sections (e.g. a full CV with a long Students section but a short
+-- Teaching one even though `details: true` overall):
+--
+--   ::: {.cv-block file="students.yml"}
+--   :::
+--
+--   ::: {.cv-block file="teachings.yml" details="false"}
+--   :::
+--
 -- `cv-data-dir` (not `data-dir`) specifically dodges a confirmed Quarto
 -- reserved-key collision: `data-dir` is silently swallowed before it
 -- reaches a filter's meta table at all (empirically confirmed -- unlike
@@ -158,13 +169,34 @@ local function load_div_data(div)
   return data
 end
 
+-- A `.cv-block` Div can override the document-wide `details:` setting
+-- for just that block (e.g. `::: {.cv-block file="students.yml"
+-- details="true"}` inside a document rendered with `details: false`) --
+-- handy for picking long/short per-section instead of only per-document.
+-- Returns the shared `opts` unchanged when the Div has no `details`
+-- attribute (the common case), or a shallow copy with `details`
+-- overridden otherwise -- `opts` is only ever read downstream, never
+-- mutated, so callers besides this one are unaffected either way.
+local function resolve_div_opts(div)
+  local override = div.attributes["details"]
+  if override == nil then
+    return opts
+  end
+  local scoped = {}
+  for k, v in pairs(opts) do
+    scoped[k] = v
+  end
+  scoped.details = (override == "true")
+  return scoped
+end
+
 local function render_with(render_fn, div)
   local data, err = load_div_data(div)
   if not data then
     return err
   end
 
-  local ok, result = pcall(render_fn, data, opts)
+  local ok, result = pcall(render_fn, data, resolve_div_opts(div))
   if not ok then
     return pandoc.RawBlock("latex", "% cv-blocks: " .. tostring(result))
   end
