@@ -203,6 +203,52 @@ local function render_with(render_fn, div)
   return result
 end
 
+-- A plain Pandoc definition list (`Term\n:   Definition`) renders as the
+-- same {label}|{content} tabular \multblock/\block use (see
+-- before-body.tex), instead of LaTeX's default `description` environment
+-- -- so a document can build a multblock-style aligned, ruled summary
+-- from plain markdown instead of a raw \multblock call. Every row uses
+-- \multblock's \readBlock look (\em label, no special first-row
+-- treatment) since a definition list has no title/date concept of its
+-- own.
+--
+-- Builds the tabular body as a single Inlines stream (RawInline markup
+-- spliced around the term's/definitions' own Inlines) instead of
+-- stringifying each side through pandoc.write -- a `{{< cv_count ... >}}`
+-- shortcode is still an unresolved placeholder Span at filter time
+-- (Quarto substitutes its real value in a later pass over the final
+-- AST), so serializing it early via pandoc.write bakes in an empty
+-- string instead of the eventual number. Keeping the original Inlines
+-- objects in the returned AST (rather than a RawBlock string) lets that
+-- later substitution still find and resolve them normally.
+local function render_definition_list(el)
+  local body = pandoc.Inlines({})
+  for _, item in ipairs(el.content) do
+    local term, definitions = item[1], item[2]
+    body:insert(pandoc.RawInline("latex", "\\hfill{\\em "))
+    body:extend(term)
+    body:insert(pandoc.RawInline("latex", "} & "))
+    for i, blocks in ipairs(definitions) do
+      for _, blk in ipairs(blocks) do
+        if blk.content then
+          body:extend(blk.content)
+        end
+      end
+      if i < #definitions then
+        body:insert(pandoc.LineBreak())
+      end
+    end
+    body:insert(pandoc.RawInline("latex", " \\\\"))
+    body:insert(pandoc.SoftBreak())
+  end
+
+  return pandoc.Blocks({
+    pandoc.RawBlock("latex", "\\par\\noindent\\begin{tabular}[t]{@{}R{.15\\linewidth}|p{.8\\linewidth}}"),
+    pandoc.Plain(body),
+    pandoc.RawBlock("latex", "\\end{tabular}\\medskip"),
+  })
+end
+
 return {
   {
     Meta = function(meta)
@@ -227,5 +273,6 @@ return {
       end
       return nil
     end,
+    DefinitionList = render_definition_list,
   },
 }
