@@ -30,6 +30,10 @@
 % before-body.tex, alongside the colors they use.
 \usepackage[explicit]{titlesec}
 
+% itemize bullet style: package load only -- the \setlist call is in
+% before-body.tex, alongside the mred color it uses.
+\usepackage{enumitem}
+
 % array: needed for \multblock's custom R{<width>} column type. Also
 % loaded by Quarto's own tables.tex, but load it explicitly so \multblock
 % still works if a document sets `tables: false`.

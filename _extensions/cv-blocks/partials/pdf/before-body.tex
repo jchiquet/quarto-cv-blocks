@@ -30,6 +30,13 @@ $endif$
 \definecolor{mblue}{rgb}{.204,.353,.541}
 \colorlet{mred}{red!80!black}
 
+% Plain markdown itemize lists (e.g. a `.qmd`'s own bullet content,
+% outside any \multblock/\block) get an mred en-dash instead of LaTeX's
+% default bullet/en-dash/asterisk nesting, to match the rest of the
+% document's understated, rule-and-color-driven look rather than
+% standing out as a generic Markdown list.
+\setlist[itemize]{label=\color{mred}{\textendash}}
+
 % Small caps via URW Avant Garde instead of LaTeX's faked small caps.
 % \fontencoding{T1} is needed under LuaLaTeX (defaults to TU); harmless
 % under pdflatex, where T1 is already active.
