@@ -18,15 +18,14 @@ categories: [Statistical methods, Machine learning]
 
 ### Brief summary of activities
 
-```{=latex}
-\multblock{Activity}{\rm since 2010}
-{
-  {Production}{ {{< cv_count file="data/papers.yml" group=1 >}} papers, {{< cv_count file="data/papers.yml" group=2 >}} talks}
-  {Students}{ {{< cv_count file="data/students.yml" group=1 >}} PhD, {{< cv_count file="data/students.yml" group=2 >}} Master}
-}
+Production
+:   {{< cv_count file="data/papers.yml" group=1 >}} papers, {{< cv_count file="data/papers.yml" group=2 >}} talks.
 
-\block{Teaching}{\rm Statistics in Action with R, Convex Optimization}
-```
+Students
+:   {{< cv_count file="data/students.yml" group=1 >}} PhD, {{< cv_count file="data/students.yml" group=2 >}} Master.
+
+Teaching
+:   Statistics in Action with R, Convex Optimization.
 
 ### Experience
 
