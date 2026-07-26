@@ -395,6 +395,26 @@ end
 -- collapsing to a fallback sentence in short mode (Pattern C).
 -- ---------------------------------------------------------------------
 
+-- A group's own `details: true`/`false` field overrides the
+-- document/Div-level setting for just that group's entries (e.g. a
+-- Students file with separate `heading:` groups for ongoing/alumni/
+-- Master can show the ongoing group in long form and the other two in
+-- short form in the very same render). Same shape as cv-blocks.lua's
+-- `resolve_div_opts` -- returns `opts` unchanged (no copy) when the
+-- group doesn't set `details`, a scoped copy otherwise, and never
+-- mutates the shared `opts` other groups still read.
+local function resolve_group_opts(group, opts)
+  if group.details == nil then
+    return opts
+  end
+  local scoped = {}
+  for k, v in pairs(opts) do
+    scoped[k] = v
+  end
+  scoped.details = group.details
+  return scoped
+end
+
 local function render_group(group, opts, blocks)
   -- The heading is shown unconditionally, even when long_only collapses
   -- the group to a short_fallback sentence.
@@ -403,18 +423,20 @@ local function render_group(group, opts, blocks)
     blocks:insert(pandoc.RawBlock("latex", "\\subsubsection{" .. heading .. "}"))
   end
 
-  if group.long_only and not opts.details then
+  local group_opts = resolve_group_opts(group, opts)
+
+  if group.long_only and not group_opts.details then
     if group.short_fallback then
-      local text = normalize_dashes(expand_inline_counts(lang_pick(group.short_fallback, opts), opts))
+      local text = normalize_dashes(expand_inline_counts(lang_pick(group.short_fallback, group_opts), group_opts))
       blocks:insert(pandoc.RawBlock("latex", text or ""))
     end
     return
   end
-  if group.short_only and opts.details then
+  if group.short_only and group_opts.details then
     return
   end
 
-  for _, latex in ipairs(render_entry_list(group.entries, opts)) do
+  for _, latex in ipairs(render_entry_list(group.entries, group_opts)) do
     blocks:insert(pandoc.RawBlock("latex", latex))
   end
 end
