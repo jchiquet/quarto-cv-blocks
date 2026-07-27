@@ -24,6 +24,21 @@ $endif$
 % Used by the fancyhdr footer in include-in-header.tex.
 \newcommand{\footer}{\nom\ \textemdash{} \title}
 
+% Cross-references a \label{sec:bib-<prefix>} emitted by cv-patterns.lua's
+% M.render_bibliography (one per .cv-bibliography group). Data files like
+% animation.yml are shared across several documents, and not every consumer
+% includes the bibliography group being pointed to (e.g. the one-page short
+% CVs omit the "Talks" section entirely) -- \ref would then resolve to "??".
+% \ifcsname r@#1\endcsname is only true once that label has actually been
+% recorded (by a previous compilation pass, in THIS document's own .aux
+% file), so the parenthetical silently disappears instead in documents that
+% don't carry the target section, rather than printing a dangling "??".
+\newcommand{\seesection}[1]{%
+  \ifcsname r@#1\endcsname
+    \ifenglish\ (see \S\ref{#1})\else\ (voir \S\ref{#1})\fi
+  \fi
+}
+
 % Colors for linkcolor/urlcolor/citecolor and \titleformat below --
 % defining them here (after \begin{document}) is fine since hyperref/xcolor
 % resolve color names lazily.
