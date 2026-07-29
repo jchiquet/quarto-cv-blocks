@@ -317,6 +317,28 @@ every `bibliography:` line.
 Bibliography groups can also be tagged `long_only`/`short_only`, same as
 entries.
 
+An entry can also be cited from anywhere else in the document — prose in
+a different section, another included `.qmd` file, a `.cv-block` entry's
+`text:` field — with a normal Quarto/pandoc citation, `[@key]`, and it
+resolves to the same `[JP1]`, `[JP2]`, ... label used in the printed
+list:
+
+```markdown
+The Normal-Block model [@tous2026normalblock] extends this to ...
+```
+
+This requires `defernumbers=true` in the document's own `biblatexoptions:`
+— without it, `resetnumbers=true` on the internal `\newrefcontext` call is
+silently ignored by biblatex and each group's numbering keeps counting up
+from the previous group's instead of restarting at 1. A full working
+list (`style=numeric`, `sorting=ydnt`, `defernumbers=true`, ...) is set as
+this extension's own default in `_extension.yml`, but a known Quarto
+metadata-merge quirk means that default is silently dropped as soon as a
+consuming document declares its *own* `biblatexoptions:` key — copy the
+full list from `_extension.yml` into the document rather than assuming
+the two merge (see `cv-en-long.qmd`/`cv-fr-long.qmd` for a working
+example).
+
 ### Counting entries
 
 The `cv_count` shortcode counts the entries a `.cv-block`/

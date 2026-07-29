@@ -11,6 +11,31 @@ local cv_yaml = require("cv-yaml")
 
 local M = {}
 
+-- Bibliography categories seen so far this render, keyed by category
+-- name -> true. `\DeclareBibliographyCategory` is preamble-only, but
+-- render_bibliography runs from a body Div, so it can't emit that
+-- command itself -- it only records the category here (dedup'd, since
+-- render_bibliography can be called once per data file and a prefix
+-- could in principle repeat). cv-blocks.lua's finalize step reads this
+-- via M.take_bib_categories() and pushes the declarations into the
+-- preamble with quarto.doc.include_text("in-header", ...).
+local declared_bib_categories = {}
+
+--- Returns the category names collected so far (insertion order) and
+-- resets the collection, so a second document render in the same Lua
+-- state (e.g. Quarto's preview server) doesn't redeclare on the next
+-- pass.
+-- @return string[] category names, e.g. {"cvblocksJP", "cvblocksSW"}
+function M.take_bib_categories()
+  local names = pandoc.List({})
+  for name in pairs(declared_bib_categories) do
+    names:insert(name)
+  end
+  table.sort(names) -- stable preamble output across runs
+  declared_bib_categories = {}
+  return names
+end
+
 -- Picks `t.fr`/`t.en` by the document's own language -- the one primitive
 -- every EN/FR selection in this file (resolve_i18n, Pattern D/F documents,
 -- the address label) is built from.
@@ -619,12 +644,27 @@ end
 -- automation has no notion of BibTeX for raw-LaTeX bibliographies. See
 -- the README ("Bibliography") for the full mechanism and its trade-offs.
 --
--- Each section is wrapped in its own `refsection` environment with an
--- explicit `\nocite{key1,key2,...}` for that .bib file's own entries
--- (`cv_yaml.read_bib_keys`, a regex over `@type{key,`, not a real parser
--- -- good enough since a spurious extra "key" that doesn't exist is
--- silently ignored). `refsection` isn't just for filtering: it's what
--- makes each section's `[JP1]`, `[JP2]`, ... numbering restart cleanly.
+-- Each section used to be wrapped in its own `refsection` environment
+-- with an explicit `\nocite{key1,key2,...}` for that .bib file's own
+-- entries. That kept each section's `[JP1]`, `[JP2]`, ... numbering
+-- clean, but `refsection` also *isolates* citations: a `\cite`/`@key`
+-- issued anywhere else in the document (prose in another chapter/file)
+-- cannot resolve into a different refsection's entries -- biblatex prints
+-- an unlinked "[1]" instead, since `\printbibliography` without a
+-- `section=` option only prints entries cited *within the same
+-- refsection*, and each explicit refsection got its own private set.
+--
+-- Replaced with the same approach as jchiquet/quarto-hceres (a `book`-
+-- class document with the same requirement: cite a curriculum entry from
+-- prose written anywhere in the document, with the right per-section
+-- prefix): no `refsection` at all, so every `\cite`/`@key` in the whole
+-- document shares one global reference pool and can find any entry.
+-- Section-local filtering is done instead with a biblatex *category*
+-- (`\DeclareBibliographyCategory` + `\addtocategory` + `\printbibliography
+-- [category=...]`), and `resetnumbers=true` on `\newrefcontext` restarts
+-- the `[JP1]`, `[JP2]`, ... numbering per section same as before.
+-- `\nocite` is still needed (a category alone doesn't cite an entry, it
+-- only tags one that's already cited/nocited).
 --
 -- Consuming documents must list every `.bib` referenced under Quarto's
 -- native `bibliography:` metadata key (can't be emitted from here, since
@@ -655,9 +695,19 @@ function M.render_bibliography(data, opts)
         error(err)
       end
 
+      -- Category name distinct from the label prefix on principle (they
+      -- happen to share charset constraints, but a category is an
+      -- internal plumbing detail while the prefix is user-visible).
+      -- The `\DeclareBibliographyCategory` itself can't be emitted here
+      -- (preamble-only, see M.take_bib_categories above) -- just record
+      -- it for cv-blocks.lua's finalize step to declare in the preamble.
+      local category = "cvblocks" .. group.prefix
+      declared_bib_categories[category] = true
+
+      local key_list = table.concat(keys, ",")
       local tex = string.format(
-        "\\begin{refsection}\n\\nocite{%s}\n\\newrefcontext[labelprefix=%s]\n\\printbibliography[heading=none]\n\\end{refsection}",
-        table.concat(keys, ","), group.prefix
+        "\\nocite{%s}\n\\addtocategory{%s}{%s}\n\\newrefcontext[labelprefix=%s]\n\\printbibliography[category=%s,resetnumbers=true,heading=none]",
+        key_list, category, key_list, group.prefix, category
       )
       blocks:insert(pandoc.RawBlock("latex", tex))
     end

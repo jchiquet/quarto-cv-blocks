@@ -5,6 +5,27 @@ format:
   cv-blocks-pdf:
     details: true
 engine: knitr
+# Quarto's YAML metadata merging shows the extension's own biblatexoptions
+# (_extensions/cv-blocks/_extension.yml) combined with this document's --
+# but only this *document-level* list actually reaches the
+# `\usepackage[...]{biblatex}` line pandoc's template emits (re-confirmed
+# empirically, twice). So this has to be the full list, not just an
+# override, despite what the metadata merge display suggests.
+# `defernumbers=true` is required for `resetnumbers=true` on
+# `\newrefcontext` to take effect (silently ignored otherwise) -- this is
+# what makes each `.cv-bibliography` group's `[JP1]`, `[JP2]`, ...
+# numbering restart per group instead of continuing across groups.
+biblatexoptions:
+  - style=numeric
+  - sorting=ydnt
+  - defernumbers=true
+  - giveninits=true
+  - maxbibnames=999
+  - date=year
+  - doi=true
+  - url=true
+  - isbn=false
+  - eprint=false
 keywords: [Sparse models, Multi-omics integration, Reproducible research]
 categories: [Statistical methods, Machine learning]
 bibliography:
@@ -77,7 +98,7 @@ Approximately 2000 hours of teaching. Lecturer at Example University from 2015 t
 
 ### DISCERN
 
-As part of the DISCERN project, my group develops sparse graphical model estimators for integrating multi-omics data. Given a sample covariance matrix $S$, we estimate a sparse precision matrix $\hat\Theta_\lambda$ by solving
+As part of the DISCERN project, my group develops sparse graphical model estimators (see article [@doe2023example] and talk [@doe2020talk]) for integrating multi-omics data. Given a sample covariance matrix $S$, we estimate a sparse precision matrix $\hat\Theta_\lambda$ by solving
 
 $$
 \hat\Theta_\lambda = \arg\min_{\Theta \succ 0} \; -\log\det\Theta + \mathrm{tr}(S\Theta) + \lambda \|\Theta\|_1 .

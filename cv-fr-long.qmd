@@ -4,6 +4,27 @@ fontsize: 10pt
 format:
   cv-blocks-pdf:
     details: true
+# Quarto's YAML metadata merging shows the extension's own biblatexoptions
+# (_extensions/cv-blocks/_extension.yml) combined with this document's --
+# but only this *document-level* list actually reaches the
+# `\usepackage[...]{biblatex}` line pandoc's template emits (re-confirmed
+# empirically, twice). So this has to be the full list, not just an
+# override, despite what the metadata merge display suggests.
+# `defernumbers=true` is required for `resetnumbers=true` on
+# `\newrefcontext` to take effect (silently ignored otherwise) -- this is
+# what makes each `.cv-bibliography` group's `[JP1]`, `[JP2]`, ...
+# numbering restart per group instead of continuing across groups.
+biblatexoptions:
+  - style=numeric
+  - sorting=ydnt
+  - defernumbers=true
+  - giveninits=true
+  - maxbibnames=999
+  - date=year
+  - doi=true
+  - url=true
+  - isbn=false
+  - eprint=false
 keywords: [Modèles parcimonieux, Intégration multi-omique, Recherche reproductible]
 categories: [Méthodes statistiques, Apprentissage automatique]
 engine: knitr
@@ -78,7 +99,7 @@ Environ 2000 heures d'enseignement. Enseignant à l'université Exemple de 2015 
 ### DISCERN
 
 Dans le cadre du projet DISCERN, mon équipe développe des estimateurs de
-modèles graphiques parcimonieux pour l'intégration de données multi-omiques.
+modèles graphiques parcimonieux (voir l'article [@doe2023example] et l'exposé [@doe2020talk]) pour l'intégration de données multi-omiques.
 À partir d'une matrice de covariance empirique $S$, on estime une matrice
 de précision parcimonieuse $\hat\Theta_\lambda$ en résolvant
 

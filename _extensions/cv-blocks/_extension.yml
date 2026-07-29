@@ -49,9 +49,21 @@ contributes:
         # inline wherever it appears in the body -- no-op override.
         - partials/pdf/biblio.tex
       cite-method: biblatex
+      # NOTE: due to a Quarto metadata-merge quirk, this default list does
+      # NOT reach the final `\usepackage[...]{biblatex}` line if the
+      # consuming document declares its own `biblatexoptions:` -- Quarto's
+      # merge only looks *document-level*-deep for this particular key.
+      # Any document using `.cv-bibliography` should therefore copy this
+      # full list (see cv-en-long.qmd/cv-fr-long.qmd) rather than relying
+      # on this default, and MUST include `defernumbers=true`: it's what
+      # makes `resetnumbers=true` on `\newrefcontext` actually take effect
+      # (silently ignored otherwise), which in turn is what makes each
+      # `.cv-bibliography` group's `[JP1]`, `[JP2]`, ... numbering restart
+      # per group instead of continuing across groups.
       biblatexoptions:
         - style=numeric
         - sorting=ydnt
+        - defernumbers=true
         - giveninits=true
         - maxbibnames=999
         - date=year

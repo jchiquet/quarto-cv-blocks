@@ -258,21 +258,45 @@ return {
     end,
   },
   {
-    Div = function(div)
-      if div.t ~= "Div" then
-        return nil
+    -- Wrapped in a `Pandoc` finalize step (rather than bare `Div`/
+    -- `DefinitionList` filters) so that, after the walk below has run
+    -- `render_bibliography` on every `.cv-bibliography` Div and thereby
+    -- populated cv_patterns' bibliography-category collector, this pass
+    -- can push the corresponding `\DeclareBibliographyCategory` lines
+    -- into the LaTeX preamble -- `\DeclareBibliographyCategory` is
+    -- preamble-only, so it can't be emitted as a body RawBlock the way
+    -- the rest of a `.cv-bibliography` Div's LaTeX is. See
+    -- cv-patterns.lua's `M.take_bib_categories` for the full rationale.
+    Pandoc = function(doc)
+      doc = doc:walk({
+        Div = function(div)
+          if div.t ~= "Div" then
+            return nil
+          end
+          if div.classes:includes("cv-block") then
+            return render_with(cv_patterns.render, div)
+          end
+          if div.classes:includes("cv-header") then
+            return render_with(cv_patterns.render_header, div)
+          end
+          if div.classes:includes("cv-bibliography") then
+            return render_with(cv_patterns.render_bibliography, div)
+          end
+          return nil
+        end,
+        DefinitionList = render_definition_list,
+      })
+
+      local categories = cv_patterns.take_bib_categories()
+      if #categories > 0 then
+        local lines = pandoc.List({})
+        for _, name in ipairs(categories) do
+          lines:insert("\\DeclareBibliographyCategory{" .. name .. "}")
+        end
+        quarto.doc.include_text("in-header", table.concat(lines, "\n"))
       end
-      if div.classes:includes("cv-block") then
-        return render_with(cv_patterns.render, div)
-      end
-      if div.classes:includes("cv-header") then
-        return render_with(cv_patterns.render_header, div)
-      end
-      if div.classes:includes("cv-bibliography") then
-        return render_with(cv_patterns.render_bibliography, div)
-      end
-      return nil
+
+      return doc
     end,
-    DefinitionList = render_definition_list,
   },
 }
